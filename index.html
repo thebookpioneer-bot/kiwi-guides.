@@ -487,7 +487,7 @@ let selectedDate="";
 let routeHistory=["home"];
 
 function showPage(id, push=true){
-  if(PUBLIC_BLOCKED_PAGES.has(id)) id="home";
+  if(PUBLIC_BLOCKED_PAGES.has(id) && !(id==="owner" && window.__kiwiOwnerAuthenticated===true)) id="home";
   $$(".page").forEach(p=>p.classList.remove("active"));
   const page=$("#page-"+id);
   if(page) page.classList.add("active");
@@ -1260,12 +1260,14 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   async function loadOwnerDashboard() {
     const ok = await requireAdmin();
     if(!ok) {
+      window.__kiwiOwnerAuthenticated = false;
       showPage("owner-login");
       const msg = document.querySelector("#ownerLoginMessage");
       if(msg) msg.textContent = "Owner access is restricted to an approved admin account.";
       return;
     }
 
+    window.__kiwiOwnerAuthenticated = true;
     document.querySelector("#ownerLiveAdmin").style.display = "";
     showPage("owner", false);
 
@@ -1411,7 +1413,10 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       const { data, error } = await db.auth.signUp({
         email,
         password,
-        options:{ data:{ full_name:"Kiwi Guides Owner" } }
+        options:{
+          data:{ full_name:"Kiwi Guides Owner" },
+          emailRedirectTo: `${window.location.origin}/#owner-login`
+        }
       });
       if(error) throw error;
 
@@ -1437,6 +1442,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
 
   document.querySelector("#ownerSignOut")?.addEventListener("click", async () => {
     await db.auth.signOut();
+    window.__kiwiOwnerAuthenticated = false;
     document.querySelector("#ownerLiveAdmin").style.display = "none";
     showPage("home");
   });

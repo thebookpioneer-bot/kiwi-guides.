@@ -212,7 +212,7 @@ textarea{min-height:105px;resize:vertical}
   <nav class="nav">
     <button class="navbtn active" data-page="home">Home</button>
     <button class="navbtn" data-page="explore">Explore</button>
-    <button class="navbtn" data-page="guides">For Guides</button>
+    <button class="navbtn" data-page="guides">For Guides</button><button class="navbtn" data-page="contact">Contact</button>
     
   </nav>
 </header>
@@ -279,6 +279,55 @@ textarea{min-height:105px;resize:vertical}
   <div id="listingPageContent"></div>
 </section>
 
+
+
+<section class="page" id="page-contact">
+  <section class="hero" style="text-align:center">
+    <div class="eyebrow" style="color:#d5e1d8">CONTACT KIWI GUIDES</div>
+    <h1>How can we help?</h1>
+    <p>Have a question about a guided trip, booking, or becoming a Kiwi Guides guide? Send us an enquiry and we’ll get back to you as soon as we can.</p>
+  </section>
+
+  <section class="section">
+    <div class="two-col" style="align-items:start">
+      <div class="panel">
+        <div class="eyebrow">EMAIL US</div>
+        <h2>Get in touch</h2>
+        <p style="color:var(--muted);line-height:1.65">You can email Kiwi Guides directly at:</p>
+        <p><a href="mailto:thebookpioneer@gmail.com" style="font-weight:900;color:var(--forest);font-size:18px">thebookpioneer@gmail.com</a></p>
+        <p style="color:var(--muted);line-height:1.65">For booking questions, include the trip name and booking reference if you have one.</p>
+      </div>
+
+      <div class="panel">
+        <div class="eyebrow">SEND AN ENQUIRY</div>
+        <h2>Contact form</h2>
+        <form id="contactForm">
+          <label>Name
+            <input id="contactName" required autocomplete="name">
+          </label>
+          <label>Email
+            <input id="contactEmail" type="email" required autocomplete="email">
+          </label>
+          <label>Enquiry type
+            <select id="contactType" required>
+              <option value="General enquiry">General enquiry</option>
+              <option value="Booking help">Booking help</option>
+              <option value="Guide support">Guide support</option>
+              <option value="Becoming a guide">Becoming a guide</option>
+              <option value="Partnership or media">Partnership or media</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>Message
+            <textarea id="contactMessage" required rows="6" placeholder="How can we help?"></textarea>
+          </label>
+          <button class="primary" type="submit" style="width:100%">Email enquiry</button>
+        </form>
+        <p style="color:var(--muted);font-size:12px;margin-top:12px">Tapping Email enquiry opens your email app with the message filled in and ready to send.</p>
+      </div>
+    </div>
+  </section>
+</section>
 
 <section class="page" id="page-guide-profile">
   <section class="section">
@@ -1874,6 +1923,36 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   if(location.hash === "#owner-login") showPage("owner-login", false);
 
   window.openPrivateOwnerLogin = () => showPage("owner-login");
+})();
+</script>
+
+
+<script>
+(() => {
+  const form = document.querySelector("#contactForm");
+  if(!form) return;
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+
+    const name = document.querySelector("#contactName").value.trim();
+    const email = document.querySelector("#contactEmail").value.trim();
+    const type = document.querySelector("#contactType").value;
+    const message = document.querySelector("#contactMessage").value.trim();
+
+    const subject = `Kiwi Guides enquiry — ${type}`;
+    const body = [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Enquiry type: ${type}`,
+      ``,
+      `Message:`,
+      message
+    ].join("\n");
+
+    window.location.href =
+      `mailto:thebookpioneer@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
 })();
 </script>
 

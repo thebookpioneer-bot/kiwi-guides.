@@ -183,6 +183,23 @@ textarea{min-height:105px;resize:vertical}
 .backend-status.offline .backend-dot{background:#a86558}
 .backend-status.offline{background:#f6ece9;color:#7f493f}
 
+
+#modalContent .panel{box-shadow:none} @media(min-width:760px){#modal .modal-card{max-width:820px}}
+
+.price-builder{border:1px solid #d8e0da;border-radius:16px;padding:14px;margin-top:12px;background:#f8faf8}
+.price-row{display:grid;grid-template-columns:1.2fr .8fr auto;gap:8px;align-items:end;margin-top:8px}
+.price-row.deer{grid-template-columns:1fr .65fr .75fr auto}
+.price-row button{min-height:44px}
+.public-price-list{display:grid;gap:8px;margin:14px 0}
+.public-price-item{display:flex;justify-content:space-between;gap:16px;padding:10px 12px;border:1px solid #dfe5df;border-radius:12px;background:#fff}
+.public-guide-card{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center}
+.public-guide-avatar{width:120px;height:120px;border-radius:18px;background:#e7eee8;display:grid;place-items:center;font-weight:900;color:var(--forest);font-size:28px}
+@media(max-width:620px){
+  .price-row,.price-row.deer{grid-template-columns:1fr}
+  .public-guide-card{grid-template-columns:1fr}
+  .public-guide-avatar{width:84px;height:84px}
+}
+
 </style>
 </head>
 <body>
@@ -262,6 +279,14 @@ textarea{min-height:105px;resize:vertical}
   <div id="listingPageContent"></div>
 </section>
 
+
+<section class="page" id="page-guide-profile">
+  <section class="section">
+    <button class="back" type="button" onclick="history.back()">← Back</button>
+    <div id="guideProfilePublicContent"></div>
+  </section>
+</section>
+
 <section class="page" id="page-booking">
   <div class="routebar"><button type="button" data-back>← Back</button><span>/</span><span>Booking</span></div>
   <section class="section" id="bookingShell">
@@ -269,6 +294,11 @@ textarea{min-height:105px;resize:vertical}
       <div class="eyebrow">STEP 1 OF 3</div>
       <h2>Choose your date</h2>
       <p id="bookingTripName" style="color:var(--muted)"></p>
+      <div id="bookingPricingChoiceWrap" style="display:none">
+        <label>Choose booking / hunting price
+          <select id="bookingPricingChoice"></select>
+        </label>
+      </div>
       <div class="calendar-wrap customer-calendar">
         <div class="calendar-toolbar">
           <button class="calendar-nav" type="button" id="bookingPrevMonth" aria-label="Previous month">‹</button>
@@ -352,7 +382,7 @@ textarea{min-height:105px;resize:vertical}
             <label>Qualifications / licences<textarea id="applyQualifications" name="qualifications" placeholder="First aid, firearms licence, outdoor qualifications, etc."></textarea></label>
             <label>Regions and areas you guide<textarea required id="applyAreas" name="areas_guided"></textarea></label>
             <label>Types of trips<textarea required id="applyTrips" name="trip_types" placeholder="Day trips, multi day, back country, hunting, helicopter accessed, etc."></textarea></label>
-            <label>Photos<input type="file" accept="image/*" multiple></label>
+            <label>Photos<input id="applyPhotos" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple><span style="display:block;margin-top:6px;font-size:12px;color:var(--muted)">Upload guide/business photos for Kiwi Guides to review. Maximum 10 MB per image.</span></label>
             <div class="form-grid"><label>Instagram<input id="applyInstagram" placeholder="@yourguide"></label><label>Facebook<input id="applyFacebook" placeholder="facebook.com/..."></label><label>TikTok<input id="applyTiktok" placeholder="@yourguide"></label><label>YouTube<input id="applyYoutube" placeholder="youtube.com/..."></label></div>
             <label>Website<input id="applyWebsite" placeholder="www.yourwebsite.co.nz"></label>
             <label>Short guide bio<textarea required id="applyBio"></textarea></label>
@@ -607,13 +637,26 @@ $("#toSummary").addEventListener("click",()=>{
     alert("Please enter your name, email and phone number.");
     return;
   }
-  const t=trips.find(x=>x.id===currentTripId);
+  const t=trips.find(x=>String(x.id)===String(currentTripId));
+  if(!t) return;
+  if(t.priceOptions?.length && Number(t.price)<=0 && !currentPricingOptionId){
+    alert("Please choose the hunting or booking price that applies.");
+    return;
+  }
   const people=$("#bookingPeople").value;
+  const selectedOption=t.priceOptions?.find(o=>String(o.id)===String(currentPricingOptionId));
+  let optionLabel="";
+  if(selectedOption){
+    optionLabel=selectedOption.option_type==="deer_point"
+      ? `${selectedOption.animal_name} • ${selectedOption.deer_points} points`
+      : (selectedOption.label || selectedOption.animal_name || "Selected price");
+  }
   $("#bookingSummary").innerHTML=`
     <div><span>Trip</span><strong>${t.title}</strong></div>
+    ${optionLabel?`<div><span>Price option</span><strong>${optionLabel}</strong></div>`:""}
     <div><span>Date</span><strong>${new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"))}</strong></div>
     <div><span>People</span><strong>${people}</strong></div>
-    <div><span>Total</span><strong>$${t.price}</strong></div>
+    <div><span>Total</span><strong>${new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(currentBookingPrice)}</strong></div>
   `;
   $$(".booking-step").forEach(x=>x.classList.remove("active"));
   $("#bookStep3").classList.add("active");
@@ -750,6 +793,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   let currentGuide = null;
   let currentGuideUser = null;
   let currentRequestMode = false;
+  let currentBookingPrice = 0;
+  let currentPricingOptionId = null;
   let liveAvailabilityCache = {};
 
   const modeLabel = mode => ({instant:"Instant Book",request:"Request to Book",both:"Instant Book + Request to Book"}[mode] || "Request to Book");
@@ -782,6 +827,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       features: [duration,maxGuests].filter(Boolean),
       mode: modeLabel(row.booking_mode),
       bookingMode: row.booking_mode,
+      maxGuests: row.max_guests,
+      largerGroupsAvailable: row.larger_groups_available,
+      largerGroupDetails: row.larger_group_details,
+      guide: row.guides || null,
+      priceOptions: [...(row.listing_price_options || [])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)),
       isDemo: false
     };
   }
@@ -814,7 +864,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     try {
       const { data, error } = await db
         .from("listings")
-        .select("id,guide_id,title,short_description,description,region,location,activity_type,duration_hours,price_nzd,max_guests,booking_mode,featured,created_at,listing_photos(image_url,sort_order)")
+        .select("id,guide_id,title,short_description,description,region,location,activity_type,duration_hours,price_nzd,max_guests,larger_groups_available,larger_group_details,booking_mode,featured,created_at,guides(id,display_name,business_name,bio,primary_region,website,instagram,facebook,tiktok,youtube),listing_photos(image_url,sort_order),listing_price_options(id,option_type,animal_name,deer_points,label,price_nzd,sort_order)")
         .eq("status","approved")
         .order("featured",{ascending:false})
         .order("created_at",{ascending:false});
@@ -840,7 +890,22 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   }
 
   card = function(t) {
-    return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${t.desc}</p><div class="chips">${(t.features||[]).map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick='openTrip(${safeId(t.id)})'>View guide</button></div></div></article>`;
+    const priceText = Number(t.price)>0
+      ? new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)
+      : (t.priceOptions?.length ? "Multiple prices" : "");
+    return `<article class="card">
+      ${t.photo ? `<div class="photo" style="background-image:url('${t.photo}')">${t.location?`<span class="tag">${t.location}</span>`:""}</div>` : ""}
+      <div class="card-body">
+        <div class="meta">${t.type?`<span>${t.type}</span>`:""}${t.mode?`<span>${t.mode}</span>`:""}</div>
+        <h3>${t.title}</h3>
+        ${t.desc?`<p>${t.desc}</p>`:""}
+        <div class="chips">${(t.features||[]).filter(Boolean).map(x=>`<span class="chip">${x}</span>`).join("")}</div>
+        <div class="card-foot">
+          ${priceText?`<div class="price"><strong>${priceText}</strong></div>`:"<div></div>"}
+          <button class="darkbtn" onclick='openTrip(${safeId(t.id)})'>View trip</button>
+        </div>
+      </div>
+    </article>`;
   };
 
   selectRegion = function(region) {
@@ -853,28 +918,54 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       : `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>No trips listed yet</h2><p>More approved guides will appear here as they join.</p>`;
   };
 
+  function renderOptionalPriceOptions(t){
+    if(!t.priceOptions?.length) return "";
+    return `<div class="public-price-list">${t.priceOptions.map(o=>{
+      let label=o.label || o.animal_name || "Additional price";
+      if(o.option_type==="deer_point") label=`${o.animal_name} • ${o.deer_points} point${Number(o.deer_points)===1?"":"s"}`;
+      return `<div class="public-price-item"><span>${label}</span><strong>${new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(o.price_nzd||0))}</strong></div>`;
+    }).join("")}</div>`;
+  }
+
   openTrip = function(id) {
     currentTripId = id;
     const t = trips.find(x=>sameId(x.id,id));
     if(!t) return;
+
+    const groupText = t.maxGuests ? `Up to ${t.maxGuests} ${Number(t.maxGuests)===1?"person":"people"}` : "";
+    const largerGroup = t.largerGroupsAvailable && t.largerGroupDetails
+      ? `<div class="notice" style="margin-top:12px"><strong>Larger groups:</strong> ${t.largerGroupDetails}</div>` : "";
+    const guideBlock = (!t.isDemo && t.guide)
+      ? `<div class="panel" style="margin-top:20px">
+          <div class="eyebrow">YOUR GUIDE</div>
+          <h3>${t.guide.display_name || t.guide.business_name || "Guide"}</h3>
+          ${t.guide.bio ? `<p style="color:var(--muted);line-height:1.6">${t.guide.bio}</p>` : ""}
+          <button class="pill" type="button" id="viewGuideProfileBtn">View guide profile & all listings</button>
+        </div>` : "";
+
     document.querySelector("#listingCrumb").textContent=t.title;
     document.querySelector("#listingPageContent").innerHTML=`
       <section class="hero" style="text-align:left">
         <div class="eyebrow" style="color:#d5e1d8">${String(t.location).toUpperCase()} • ${String(t.type).toUpperCase()}</div>
         <h1 style="max-width:760px;margin-left:0">${t.title}</h1>
-        <p style="margin-left:0">${t.desc}</p>
+        ${t.desc ? `<p style="margin-left:0">${t.desc}</p>` : ""}
       </section>
       <section class="section">
         <div class="two-col">
           <div>
-            <div class="photo" style="height:360px;background-image:url('${t.photo}');border-radius:20px"></div>
-            <div class="chips">${(t.features||[]).map(x=>`<span class="chip">${x}</span>`).join("")}</div>
-            <h2>About this guided trip</h2>
-            <p style="color:var(--muted);line-height:1.65">${t.desc} Your guide will confirm meeting details, what to bring and any trip-specific requirements before the day.</p>
+            ${t.photo ? `<div class="photo" style="height:360px;background-image:url('${t.photo}');border-radius:20px"></div>` : ""}
+            <div class="chips">
+              ${(t.features||[]).filter(Boolean).map(x=>`<span class="chip">${x}</span>`).join("")}
+              ${groupText ? `<span class="chip">${groupText}</span>` : ""}
+            </div>
+            ${t.desc ? `<h2>About this guided trip</h2><p style="color:var(--muted);line-height:1.65">${t.desc}</p>` : ""}
+            ${t.priceOptions?.length ? `<h2>Hunting / additional pricing</h2>${renderOptionalPriceOptions(t)}` : ""}
+            ${largerGroup}
+            ${guideBlock}
           </div>
           <div class="panel">
             <div class="eyebrow">BOOKING</div>
-            <h3>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</h3>
+            ${Number(t.price)>0 ? `<h3>From ${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</h3>` : ""}
             <p>${t.mode}</p>
             ${t.isDemo?'<div class="notice">Sample listing for the pre-launch site. It will be replaced as real approved listings are added.</div>':'<div class="notice">Choose an available date and continue through the booking steps.</div>'}
             ${t.mode !== "Request to Book" ? '<button class="primary" type="button" id="listingBookBtn" style="margin-top:14px;width:100%">Book this trip</button>' : ''}
@@ -883,11 +974,55 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         </div>
       </section>`;
     setPage("listing");
-    const book = document.querySelector("#listingBookBtn");
-    if(book) book.addEventListener("click",()=>startBooking(id,false));
-    const req=document.querySelector("#listingRequestBtn");
-    if(req) req.addEventListener("click",()=>startBooking(id,true));
+
+    document.querySelector("#listingBookBtn")?.addEventListener("click",()=>startBooking(id,false));
+    document.querySelector("#listingRequestBtn")?.addEventListener("click",()=>startBooking(id,true));
+    document.querySelector("#viewGuideProfileBtn")?.addEventListener("click",()=>openGuideProfile(t.guideId));
   };
+
+  async function openGuideProfile(guideId){
+    const holder=document.querySelector("#guideProfilePublicContent");
+    holder.innerHTML='<div class="panel"><h2>Loading guide profile…</h2></div>';
+    setPage("guide-profile");
+    try{
+      const {data:guide,error:guideErr}=await db.from("guides")
+        .select("id,display_name,business_name,bio,primary_region,website,instagram,facebook,tiktok,youtube")
+        .eq("id",guideId).single();
+      if(guideErr) throw guideErr;
+
+      const {data:listings,error:listErr}=await db.from("listings")
+        .select("id,guide_id,title,short_description,description,region,location,activity_type,duration_hours,price_nzd,max_guests,larger_groups_available,larger_group_details,booking_mode,featured,created_at,guides(id,display_name,business_name,bio,primary_region,website,instagram,facebook,tiktok,youtube),listing_photos(image_url,sort_order),listing_price_options(id,option_type,animal_name,deer_points,label,price_nzd,sort_order)")
+        .eq("guide_id",guideId).eq("status","approved").order("created_at",{ascending:false});
+      if(listErr) throw listErr;
+
+      const mapped=(listings||[]).map(mapListing);
+      const socials=[
+        guide.website&&`<a href="${guide.website}" target="_blank" rel="noopener">Website</a>`,
+        guide.instagram&&`<span>Instagram: ${guide.instagram}</span>`,
+        guide.facebook&&`<span>Facebook: ${guide.facebook}</span>`,
+        guide.tiktok&&`<span>TikTok: ${guide.tiktok}</span>`,
+        guide.youtube&&`<span>YouTube: ${guide.youtube}</span>`
+      ].filter(Boolean).join(" • ");
+
+      holder.innerHTML=`
+        <div class="panel public-guide-card">
+          <div class="public-guide-avatar">${(guide.display_name||guide.business_name||"KG").split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div>
+          <div>
+            <div class="eyebrow">KIWI GUIDES PROFILE</div>
+            <h1 style="margin:4px 0 8px">${guide.display_name||guide.business_name||"Guide"}</h1>
+            ${guide.business_name && guide.business_name!==guide.display_name ? `<p><strong>${guide.business_name}</strong></p>` : ""}
+            ${guide.primary_region ? `<p>${guide.primary_region}</p>` : ""}
+            ${guide.bio ? `<p style="color:var(--muted);line-height:1.65">${guide.bio}</p>` : ""}
+            ${socials ? `<p style="font-size:13px;color:var(--muted)">${socials}</p>` : ""}
+          </div>
+        </div>
+        <div class="section-head" style="margin-top:28px"><div><div class="eyebrow">ALL LISTINGS</div><h2>Trips with this guide</h2></div></div>
+        <div class="cards">${mapped.length ? mapped.map(card).join("") : '<p>No approved listings are currently available.</p>'}</div>`;
+    }catch(err){
+      console.error(err);
+      holder.innerHTML='<div class="panel"><h2>Guide profile unavailable</h2><p>Please try again.</p></div>';
+    }
+  }
 
   function monthBounds(date) {
     const y=date.getFullYear(), m=date.getMonth();
@@ -928,6 +1063,40 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const t=trips.find(x=>sameId(x.id,id));
     if(!t) return;
     selectedDate="";
+    const peopleSelect=document.querySelector("#bookingPeople");
+    const max=Math.max(1,Math.min(4,Number(t.maxGuests||4)));
+    peopleSelect.innerHTML=Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1} ${i===0?"person":"people"}</option>`).join("");
+
+    const pricingWrap=document.querySelector("#bookingPricingChoiceWrap");
+    const pricingSelect=document.querySelector("#bookingPricingChoice");
+    currentPricingOptionId=null;
+    currentBookingPrice=Number(t.price||0);
+
+    if(t.priceOptions?.length){
+      pricingWrap.style.display="";
+      const options=[];
+      if(Number(t.price)>0){
+        options.push(`<option value="" data-price="${Number(t.price)}">Base trip — ${new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(t.price))}</option>`);
+      } else {
+        options.push('<option value="">Select a price option</option>');
+      }
+      options.push(...t.priceOptions.map(o=>{
+        let label=o.label || o.animal_name || "Price option";
+        if(o.option_type==="deer_point") label=`${o.animal_name} — ${o.deer_points} point${Number(o.deer_points)===1?"":"s"}`;
+        return `<option value="${o.id}" data-price="${Number(o.price_nzd)}">${label} — ${new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(o.price_nzd))}</option>`;
+      }));
+      pricingSelect.innerHTML=options.join("");
+      pricingSelect.onchange=()=>{
+        const opt=pricingSelect.selectedOptions[0];
+        currentPricingOptionId=pricingSelect.value || null;
+        currentBookingPrice=Number(opt?.dataset.price||0);
+      };
+      pricingSelect.dispatchEvent(new Event("change"));
+    } else {
+      pricingWrap.style.display="none";
+      pricingSelect.innerHTML="";
+    }
+
     bookingCalendarDate=new Date();
     bookingCalendarDate=new Date(bookingCalendarDate.getFullYear(),bookingCalendarDate.getMonth(),1);
     document.querySelector("#bookingTripName").textContent=t.title+(requestMode?" • Request to Book":"");
@@ -976,7 +1145,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         customer_phone:document.querySelector("#bookPhone").value.trim(),
         booking_date:selectedDate,
         guest_count:Number(document.querySelector("#bookingPeople").value||1),
-        total_amount_nzd:t.price,
+        total_amount_nzd:currentBookingPrice,
+        pricing_option_id:currentPricingOptionId,
         status:requestedStatus
       });
       if(error) throw error;
@@ -1025,11 +1195,37 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         website:document.querySelector("#applyWebsite").value.trim(),
         bio:document.querySelector("#applyBio").value.trim()
       };
+      const applicationId = crypto.randomUUID();
+      application.id = applicationId;
       const {error:insertError}=await db.from("guide_applications").insert(application);
       if(insertError) throw insertError;
+
+      const files=[...(document.querySelector("#applyPhotos")?.files||[])];
+      for(const file of files){
+        if(file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10 MB.`);
+        const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+        const storagePath=`${applicationId}/${crypto.randomUUID()}-${safeName}`;
+        const {error:uploadError}=await db.storage
+          .from("guide-application-uploads")
+          .upload(storagePath,file,{contentType:file.type,upsert:false});
+        if(uploadError) throw uploadError;
+
+        const {error:metaError}=await db.from("guide_application_uploads").insert({
+          application_id:applicationId,
+          storage_path:storagePath,
+          original_name:file.name,
+          mime_type:file.type,
+          size_bytes:file.size
+        });
+        if(metaError) throw metaError;
+      }
+
       const {error:signupError}=await db.auth.signUp({
         email,password,
-        options:{data:{full_name:application.guide_name}}
+        options:{
+          data:{full_name:application.guide_name},
+          emailRedirectTo:`${window.location.origin}/#guides`
+        }
       });
       const note = signupError
         ? "Your application is saved. If you already have an account, use Guide log in. Otherwise contact Kiwi Guides if you need help activating your login."
@@ -1117,16 +1313,22 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
 
   async function loadGuideListings() {
     if(!currentGuide) return;
-    const {data,error}=await db.from("listings").select("*").eq("guide_id",currentGuide.id).order("created_at",{ascending:false});
+    const {data,error}=await db.from("listings")
+      .select("*,listing_price_options(id,option_type,animal_name,deer_points,label,price_nzd,sort_order)")
+      .eq("guide_id",currentGuide.id)
+      .order("created_at",{ascending:false});
     if(error) throw error;
     const list=data||[];
     const container=document.querySelector("#guideListingsContainer");
     container.innerHTML=list.length ? list.map(l=>`
       <div class="listing-item">
         <strong>${l.title}</strong>
-        <p>${l.duration_hours?`${Number(l.duration_hours)} hours • `:""}${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(Number(l.price_nzd||0))}</p>
+        <p>${l.duration_hours?`${Number(l.duration_hours)} hours • `:""}${Number(l.price_nzd)>0 ? new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(Number(l.price_nzd)) : (l.listing_price_options?.length ? "Multiple hunting prices" : "Price not entered")}</p>
         <span class="status">${String(l.status).toUpperCase()}</span>
         <p style="color:var(--muted);font-size:13px">${modeLabel(l.booking_mode)} • ${l.region}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="pill guide-edit-listing" type="button" data-id="${l.id}">Edit Listing</button>
+        </div>
       </div>`).join("") : '<p style="color:var(--muted)">You have no listings yet. Add your first listing below.</p>';
     const sel=document.querySelector("#guideAvailabilityListing");
     sel.innerHTML=list.length ? list.map(l=>`<option value="${l.id}">${l.title}</option>`).join("") : '<option value="">Add a listing first</option>';
@@ -1138,6 +1340,10 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     } else {
       document.querySelector("#guideCalendar").innerHTML="";
     }
+
+    document.querySelectorAll(".guide-edit-listing").forEach(btn=>{
+      btn.addEventListener("click",()=>openEditListing(btn.dataset.id));
+    });
   }
 
   async function renderGuideCalendarLive() {
@@ -1174,50 +1380,383 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   document.querySelector("#guidePrevMonth")?.addEventListener("click",async()=>{ await renderGuideCalendarLive(); });
   document.querySelector("#guideNextMonth")?.addEventListener("click",async()=>{ await renderGuideCalendarLive(); });
 
+
+  async function openEditListing(listingId){
+    if(!currentGuide) return;
+
+    try{
+      const {data:l,error}=await db.from("listings")
+        .select("*,listing_price_options(id,option_type,animal_name,deer_points,label,price_nzd,sort_order)")
+        .eq("id",listingId)
+        .eq("guide_id",currentGuide.id)
+        .single();
+      if(error) throw error;
+
+      const animalOptions=(l.listing_price_options||[]).filter(x=>x.option_type==="animal").sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+      const deerOptions=(l.listing_price_options||[]).filter(x=>x.option_type==="deer_point").sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+
+      document.querySelector("#modalContent").innerHTML=`
+        <div class="eyebrow">EDIT LISTING</div>
+        <h2>${l.title}</h2>
+        <p style="color:var(--muted)">Update any details below. Saving changes will return the listing to Pending Review before it appears publicly again.</p>
+
+        <form id="editListingForm">
+          <label>Listing title<input id="editListingTitle" required value="${esc(l.title)}"></label>
+
+          <div class="form-grid">
+            <label>Region<input id="editListingRegion" required value="${esc(l.region||"")}"></label>
+            <label>Location<input id="editListingLocation" value="${esc(l.location||"")}"></label>
+
+            <label>Activity type
+              <select id="editListingActivity" required>
+                <option value="">Choose activity</option>
+                ${["Fly Fishing","Fishing","Hunting","Hunting & Fishing","Back Country Adventure","Other"].map(v=>`<option ${l.activity_type===v?"selected":""}>${v}</option>`).join("")}
+              </select>
+            </label>
+
+            <label>Duration in hours
+              <input id="editListingDuration" type="number" min="0.5" step="0.5" value="${l.duration_hours??""}">
+            </label>
+
+            <label>Base trip price NZD
+              <input id="editListingPrice" type="number" min="0" step="1" value="${Number(l.price_nzd||0)>0?Number(l.price_nzd):""}" placeholder="Optional if using animal pricing">
+            </label>
+
+            <label>Standard booking size
+              <select id="editListingGuests">
+                ${[1,2,3,4].map(n=>`<option value="${n}" ${Number(l.max_guests)===n?"selected":""}>${n===1?"1 person":`Up to ${n} people`}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+
+          <label style="display:flex;gap:10px;align-items:center;margin-top:10px">
+            <input id="editListingLargerGroups" type="checkbox" style="width:auto" ${l.larger_groups_available?"checked":""}>
+            Larger group bookings available
+          </label>
+
+          <label id="editLargerGroupDetailsWrap" style="${l.larger_groups_available?"":"display:none"}">
+            Larger group details / pricing
+            <textarea id="editListingLargerGroupDetails" placeholder="e.g. Groups of 5–8 available by request.">${esc(l.larger_group_details||"")}</textarea>
+          </label>
+
+          <label>Short description
+            <textarea id="editListingDescription" placeholder="Describe the trip, what is included, and anything customers should know.">${esc(l.short_description||l.description||"")}</textarea>
+          </label>
+
+          <label>Booking option
+            <select id="editListingMode">
+              <option value="instant" ${l.booking_mode==="instant"?"selected":""}>Instant Book</option>
+              <option value="request" ${l.booking_mode==="request"?"selected":""}>Request to Book</option>
+              <option value="both" ${l.booking_mode==="both"?"selected":""}>Instant Book + Request to Book</option>
+            </select>
+          </label>
+
+          <div id="editHuntingPricingBuilder" class="price-builder" style="${String(l.activity_type||"").toLowerCase().includes("hunting")?"":"display:none"}">
+            <div class="eyebrow">HUNTING PRICING</div>
+            <h3 style="margin-top:4px">Prices by animal</h3>
+            <div id="editAnimalPriceRows"></div>
+            <button class="pill" type="button" id="editAddAnimalPrice">+ Add animal price</button>
+
+            <h3 style="margin-top:22px">Deer prices by point</h3>
+            <div id="editDeerPointRows"></div>
+            <button class="pill" type="button" id="editAddDeerPointPrice">+ Add deer point price</button>
+          </div>
+
+          <div class="notice" style="margin-top:18px">
+            Your existing availability calendar stays attached to this listing.
+          </div>
+
+          <button class="primary" type="submit" style="margin-top:18px">Save changes for review</button>
+        </form>`;
+
+      document.querySelector("#modal").classList.add("open");
+
+      const activity=document.querySelector("#editListingActivity");
+      const larger=document.querySelector("#editListingLargerGroups");
+      const huntingBox=document.querySelector("#editHuntingPricingBuilder");
+
+      function updateEditFields(){
+        huntingBox.style.display=activity.value.toLowerCase().includes("hunting")?"":"none";
+        document.querySelector("#editLargerGroupDetailsWrap").style.display=larger.checked?"":"none";
+      }
+      activity.addEventListener("change",updateEditFields);
+      larger.addEventListener("change",updateEditFields);
+
+      function addEditAnimalRow(existing={}){
+        const wrap=document.createElement("div");
+        wrap.className="price-row";
+        wrap.innerHTML=`
+          <label>Animal / species<input class="animal-name" value="${esc(existing.animal_name||"")}" placeholder="e.g. Red deer"></label>
+          <label>Price NZD<input class="animal-price" type="number" min="0" step="1" value="${existing.price_nzd??""}"></label>
+          <button class="pill remove-price-row" type="button">Remove</button>`;
+        wrap.querySelector(".remove-price-row").addEventListener("click",()=>wrap.remove());
+        document.querySelector("#editAnimalPriceRows").appendChild(wrap);
+      }
+
+      function addEditDeerRow(existing={}){
+        const wrap=document.createElement("div");
+        wrap.className="price-row deer";
+        wrap.innerHTML=`
+          <label>Deer type<input class="deer-name" value="${esc(existing.animal_name||"")}" placeholder="e.g. Red deer"></label>
+          <label>Points<input class="deer-points" type="number" min="1" step="1" value="${existing.deer_points??""}"></label>
+          <label>Price NZD<input class="deer-price" type="number" min="0" step="1" value="${existing.price_nzd??""}"></label>
+          <button class="pill remove-price-row" type="button">Remove</button>`;
+        wrap.querySelector(".remove-price-row").addEventListener("click",()=>wrap.remove());
+        document.querySelector("#editDeerPointRows").appendChild(wrap);
+      }
+
+      animalOptions.forEach(addEditAnimalRow);
+      deerOptions.forEach(addEditDeerRow);
+
+      document.querySelector("#editAddAnimalPrice").addEventListener("click",()=>addEditAnimalRow());
+      document.querySelector("#editAddDeerPointPrice").addEventListener("click",()=>addEditDeerRow());
+
+      document.querySelector("#editListingForm").addEventListener("submit",async e=>{
+        e.preventDefault();
+        const submit=e.currentTarget.querySelector('button[type="submit"]');
+        submit.disabled=true;
+        submit.textContent="Saving...";
+
+        try{
+          const animalRows=[...document.querySelectorAll("#editAnimalPriceRows .price-row")].map((row,index)=>({
+            listing_id:listingId,
+            option_type:"animal",
+            animal_name:row.querySelector(".animal-name").value.trim(),
+            price_nzd:Number(row.querySelector(".animal-price").value||0),
+            sort_order:index
+          })).filter(x=>x.animal_name);
+
+          const deerRows=[...document.querySelectorAll("#editDeerPointRows .price-row")].map((row,index)=>({
+            listing_id:listingId,
+            option_type:"deer_point",
+            animal_name:row.querySelector(".deer-name").value.trim(),
+            deer_points:Number(row.querySelector(".deer-points").value||0),
+            price_nzd:Number(row.querySelector(".deer-price").value||0),
+            sort_order:100+index
+          })).filter(x=>x.animal_name && x.deer_points>0);
+
+          const basePrice=Number(document.querySelector("#editListingPrice").value||0);
+          if(basePrice<=0 && animalRows.length===0 && deerRows.length===0){
+            throw new Error("Enter a base trip price or at least one hunting price.");
+          }
+
+          const largerChecked=document.querySelector("#editListingLargerGroups").checked;
+
+          const {error:updateError}=await db.from("listings").update({
+            title:document.querySelector("#editListingTitle").value.trim(),
+            region:document.querySelector("#editListingRegion").value.trim(),
+            location:document.querySelector("#editListingLocation").value.trim()||null,
+            activity_type:document.querySelector("#editListingActivity").value,
+            duration_hours:document.querySelector("#editListingDuration").value ? Number(document.querySelector("#editListingDuration").value) : null,
+            price_nzd:basePrice,
+            max_guests:Number(document.querySelector("#editListingGuests").value),
+            larger_groups_available:largerChecked,
+            larger_group_details:largerChecked ? (document.querySelector("#editListingLargerGroupDetails").value.trim()||null) : null,
+            short_description:document.querySelector("#editListingDescription").value.trim()||null,
+            description:document.querySelector("#editListingDescription").value.trim()||null,
+            booking_mode:document.querySelector("#editListingMode").value,
+            status:"pending",
+            approved_by:null,
+            approved_at:null
+          }).eq("id",listingId).eq("guide_id",currentGuide.id);
+
+          if(updateError) throw updateError;
+
+          const {error:deletePriceError}=await db.from("listing_price_options").delete().eq("listing_id",listingId);
+          if(deletePriceError) throw deletePriceError;
+
+          const newOptions=[...animalRows,...deerRows];
+          if(newOptions.length){
+            const {error:priceError}=await db.from("listing_price_options").insert(newOptions);
+            if(priceError) throw priceError;
+          }
+
+          document.querySelector("#modalContent").innerHTML=`
+            <div class="eyebrow">CHANGES SAVED</div>
+            <h2>Your listing has been updated.</h2>
+            <p>The listing is now Pending Review. Your availability calendar has not been changed.</p>`;
+
+          await loadGuideListings();
+        }catch(err){
+          console.error(err);
+          alert(err.message||"The listing changes could not be saved.");
+          submit.disabled=false;
+          submit.textContent="Save changes for review";
+        }
+      });
+
+    }catch(err){
+      console.error(err);
+      alert("This listing could not be opened for editing.");
+    }
+  }
+
   document.querySelector("#addListing")?.addEventListener("click",()=>{
     if(!currentGuide) { alert("Please log in as an approved guide first."); return; }
+
     document.querySelector("#modalContent").innerHTML=`
       <div class="eyebrow">NEW LISTING</div>
-      <h2>Add another guide listing</h2>
+      <h2>Create a guide listing</h2>
+      <p style="color:var(--muted)">Only information you complete will be shown publicly.</p>
+
       <form id="newListingForm">
         <label>Listing title<input id="newListingTitle" required></label>
         <div class="form-grid">
           <label>Region<input id="newListingRegion" required placeholder="e.g. Bay of Plenty"></label>
-          <label>Location<input id="newListingLocation" required placeholder="e.g. Rotorua"></label>
-          <label>Activity type<input id="newListingActivity" required placeholder="e.g. Trout Fishing"></label>
-          <label>Duration in hours<input id="newListingDuration" type="number" min="1" step="0.5" required></label>
-          <label>Price NZD<input id="newListingPrice" type="number" min="0" step="1" required></label>
-          <label>Maximum guests<input id="newListingGuests" type="number" min="1" value="1" required></label>
+          <label>Location<input id="newListingLocation" placeholder="e.g. Rotorua"></label>
+          <label>Activity type
+            <select id="newListingActivity" required>
+              <option value="">Choose activity</option>
+              <option>Fly Fishing</option>
+              <option>Fishing</option>
+              <option>Hunting</option>
+              <option>Hunting & Fishing</option>
+              <option>Back Country Adventure</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>Duration in hours<input id="newListingDuration" type="number" min="0.5" step="0.5"></label>
+          <label>Base trip price NZD<input id="newListingPrice" type="number" min="0" step="1" placeholder="Optional if using animal pricing"></label>
+          <label>Standard booking size
+            <select id="newListingGuests" required>
+              <option value="1">1 person</option>
+              <option value="2">Up to 2 people</option>
+              <option value="3">Up to 3 people</option>
+              <option value="4">Up to 4 people</option>
+            </select>
+          </label>
         </div>
-        <label>Short description<textarea id="newListingDescription" required></textarea></label>
-        <label>Booking option<select id="newListingMode"><option value="instant">Instant Book</option><option value="request">Request to Book</option><option value="both">Instant Book + Request to Book</option></select></label>
-        <button class="primary" type="submit">Submit for review</button>
+
+        <label style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <input id="newListingLargerGroups" type="checkbox" style="width:auto">
+          Larger group bookings available
+        </label>
+        <label id="largerGroupDetailsWrap" style="display:none">Larger group details / pricing
+          <textarea id="newListingLargerGroupDetails" placeholder="e.g. Groups of 5–8 available by request. Contact us for a custom price."></textarea>
+        </label>
+
+        <label>Short description<textarea id="newListingDescription" placeholder="Describe the trip, what is included, and anything customers should know."></textarea></label>
+
+        <label>Booking option
+          <select id="newListingMode">
+            <option value="instant">Instant Book</option>
+            <option value="request">Request to Book</option>
+            <option value="both">Instant Book + Request to Book</option>
+          </select>
+        </label>
+
+        <div id="huntingPricingBuilder" class="price-builder" style="display:none">
+          <div class="eyebrow">HUNTING PRICING</div>
+          <h3 style="margin-top:4px">Prices by animal</h3>
+          <p style="color:var(--muted);font-size:13px">Add only the species and prices you offer. Leave anything out and it will not appear publicly.</p>
+          <div id="animalPriceRows"></div>
+          <button class="pill" type="button" id="addAnimalPrice">+ Add animal price</button>
+
+          <h3 style="margin-top:22px">Deer prices by point</h3>
+          <p style="color:var(--muted);font-size:13px">Use this when deer pricing changes depending on antler points.</p>
+          <div id="deerPointRows"></div>
+          <button class="pill" type="button" id="addDeerPointPrice">+ Add deer point price</button>
+        </div>
+
+        <button class="primary" type="submit" style="margin-top:18px">Submit for review</button>
       </form>`;
+
     document.querySelector("#modal").classList.add("open");
+
+    const activity=document.querySelector("#newListingActivity");
+    const larger=document.querySelector("#newListingLargerGroups");
+    const huntingBox=document.querySelector("#huntingPricingBuilder");
+
+    function updateListingFields(){
+      const isHunting=activity.value.toLowerCase().includes("hunting");
+      huntingBox.style.display=isHunting?"":"none";
+      document.querySelector("#largerGroupDetailsWrap").style.display=larger.checked?"":"none";
+    }
+    activity.addEventListener("change",updateListingFields);
+    larger.addEventListener("change",updateListingFields);
+
+    function addAnimalRow(){
+      const wrap=document.createElement("div");
+      wrap.className="price-row";
+      wrap.innerHTML=`
+        <label>Animal / species<input class="animal-name" placeholder="e.g. Red deer, Fallow deer, Goat, Pig"></label>
+        <label>Price NZD<input class="animal-price" type="number" min="0" step="1"></label>
+        <button class="pill remove-price-row" type="button">Remove</button>`;
+      wrap.querySelector(".remove-price-row").addEventListener("click",()=>wrap.remove());
+      document.querySelector("#animalPriceRows").appendChild(wrap);
+    }
+
+    function addDeerPointRow(){
+      const wrap=document.createElement("div");
+      wrap.className="price-row deer";
+      wrap.innerHTML=`
+        <label>Deer type<input class="deer-name" placeholder="e.g. Red deer"></label>
+        <label>Points<input class="deer-points" type="number" min="1" step="1" placeholder="e.g. 8"></label>
+        <label>Price NZD<input class="deer-price" type="number" min="0" step="1"></label>
+        <button class="pill remove-price-row" type="button">Remove</button>`;
+      wrap.querySelector(".remove-price-row").addEventListener("click",()=>wrap.remove());
+      document.querySelector("#deerPointRows").appendChild(wrap);
+    }
+
+    document.querySelector("#addAnimalPrice").addEventListener("click",addAnimalRow);
+    document.querySelector("#addDeerPointPrice").addEventListener("click",addDeerPointRow);
+
     document.querySelector("#newListingForm").addEventListener("submit",async e=>{
       e.preventDefault();
       const submit=e.currentTarget.querySelector('button[type="submit"]');
       submit.disabled=true; submit.textContent="Submitting...";
-      try {
+      try{
+        const animalRows=[...document.querySelectorAll("#animalPriceRows .price-row")].map((row,index)=>({
+          option_type:"animal",
+          animal_name:row.querySelector(".animal-name").value.trim(),
+          price_nzd:Number(row.querySelector(".animal-price").value||0),
+          sort_order:index
+        })).filter(x=>x.animal_name);
+
+        const deerRows=[...document.querySelectorAll("#deerPointRows .price-row")].map((row,index)=>({
+          option_type:"deer_point",
+          animal_name:row.querySelector(".deer-name").value.trim(),
+          deer_points:Number(row.querySelector(".deer-points").value||0),
+          price_nzd:Number(row.querySelector(".deer-price").value||0),
+          sort_order:100+index
+        })).filter(x=>x.animal_name && x.deer_points>0);
+
+        const basePrice=Number(document.querySelector("#newListingPrice").value||0);
+        if(basePrice<=0 && animalRows.length===0 && deerRows.length===0){
+          throw new Error("Enter a base trip price or at least one hunting price.");
+        }
+
+        const listingId=crypto.randomUUID();
         const {error}=await db.from("listings").insert({
+          id:listingId,
           guide_id:currentGuide.id,
           title:document.querySelector("#newListingTitle").value.trim(),
           region:document.querySelector("#newListingRegion").value.trim(),
-          location:document.querySelector("#newListingLocation").value.trim(),
-          activity_type:document.querySelector("#newListingActivity").value.trim(),
-          duration_hours:Number(document.querySelector("#newListingDuration").value),
-          price_nzd:Number(document.querySelector("#newListingPrice").value),
+          location:document.querySelector("#newListingLocation").value.trim() || null,
+          activity_type:activity.value,
+          duration_hours:document.querySelector("#newListingDuration").value ? Number(document.querySelector("#newListingDuration").value) : null,
+          price_nzd:basePrice,
           max_guests:Number(document.querySelector("#newListingGuests").value),
-          short_description:document.querySelector("#newListingDescription").value.trim(),
-          description:document.querySelector("#newListingDescription").value.trim(),
+          larger_groups_available:larger.checked,
+          larger_group_details:larger.checked ? (document.querySelector("#newListingLargerGroupDetails").value.trim()||null) : null,
+          short_description:document.querySelector("#newListingDescription").value.trim() || null,
+          description:document.querySelector("#newListingDescription").value.trim() || null,
           booking_mode:document.querySelector("#newListingMode").value,
           status:"pending"
         });
         if(error) throw error;
-        document.querySelector("#modalContent").innerHTML='<div class="eyebrow">LISTING SUBMITTED</div><h2>Your new listing is pending review.</h2><p>It will appear publicly after Kiwi Guides approves it.</p>';
+
+        const priceOptions=[...animalRows,...deerRows].map(x=>({...x,listing_id:listingId}));
+        if(priceOptions.length){
+          const {error:priceError}=await db.from("listing_price_options").insert(priceOptions);
+          if(priceError) throw priceError;
+        }
+
+        document.querySelector("#modalContent").innerHTML='<div class="eyebrow">LISTING SUBMITTED</div><h2>Your new listing is pending review.</h2><p>Only the information you entered will appear publicly after approval.</p>';
         await loadGuideListings();
-      } catch(err) {
-        console.error(err); alert("The listing could not be saved.");
+      }catch(err){
+        console.error(err);
+        alert(err.message || "The listing could not be saved.");
         submit.disabled=false; submit.textContent="Submit for review";
       }
     });
@@ -1285,10 +1824,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         <p>${a.business_name || ""}</p>
         <p>${a.email} • ${a.primary_region || "Region not supplied"}</p>
         <p style="color:var(--muted)">${a.main_activity || ""}</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="primary owner-approve-app" type="button" data-id="${a.id}">Approve</button>
-          <button class="pill owner-reject-app" type="button" data-id="${a.id}">Reject</button>
-        </div>
+        <button class="primary owner-review-app" type="button" data-id="${a.id}" style="width:100%">Review full application</button>
       </div>`).join("") : '<p style="color:var(--muted)">No pending guide applications.</p>';
 
     const listBox = document.querySelector("#ownerListings");
@@ -1303,10 +1839,118 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         </div>
       </div>`).join("") : '<p style="color:var(--muted)">No pending listings.</p>';
 
-    document.querySelectorAll(".owner-approve-app").forEach(btn => btn.addEventListener("click",()=>reviewApplication(btn.dataset.id,"approved")));
-    document.querySelectorAll(".owner-reject-app").forEach(btn => btn.addEventListener("click",()=>reviewApplication(btn.dataset.id,"rejected")));
+    document.querySelectorAll(".owner-review-app").forEach(btn => btn.addEventListener("click",()=>openApplicationReview(btn.dataset.id)));
     document.querySelectorAll(".owner-approve-listing").forEach(btn => btn.addEventListener("click",()=>reviewListing(btn.dataset.id,"approved")));
     document.querySelectorAll(".owner-reject-listing").forEach(btn => btn.addEventListener("click",()=>reviewListing(btn.dataset.id,"rejected")));
+  }
+
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[ch]));
+
+  function reviewField(label,value){
+    const shown = value === null || value === undefined || value === "" ? "Not provided" : value;
+    return `<div style="padding:12px 0;border-bottom:1px solid #e1e7e2">
+      <div style="font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">${esc(label)}</div>
+      <div style="white-space:pre-wrap;line-height:1.55">${esc(shown)}</div>
+    </div>`;
+  }
+
+  async function openApplicationReview(id){
+    try{
+      document.querySelector("#modalContent").innerHTML='<div class="eyebrow">GUIDE APPLICATION</div><h2>Loading full application…</h2>';
+      document.querySelector("#modal").classList.add("open");
+
+      const [{data:app,error:appErr},{data:uploads,error:uploadErr}] = await Promise.all([
+        db.from("guide_applications").select("*").eq("id",id).single(),
+        db.from("guide_application_uploads").select("*").eq("application_id",id).order("created_at",{ascending:true})
+      ]);
+      if(appErr) throw appErr;
+      if(uploadErr) throw uploadErr;
+
+      const photoCards=[];
+      for(const upload of uploads||[]){
+        const {data:signed,error:signedErr}=await db.storage
+          .from("guide-application-uploads")
+          .createSignedUrl(upload.storage_path,3600);
+        if(!signedErr && signed?.signedUrl){
+          photoCards.push(`<a href="${signed.signedUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
+            <img src="${signed.signedUrl}" alt="${esc(upload.original_name)}" style="width:100%;height:170px;object-fit:cover;border-radius:14px;border:1px solid #d8e0da">
+            <div style="font-size:12px;margin-top:5px;color:var(--muted)">${esc(upload.original_name)}</div>
+          </a>`);
+        }
+      }
+
+      const submitted = app.created_at
+        ? new Intl.DateTimeFormat("en-NZ",{dateStyle:"medium",timeStyle:"short"}).format(new Date(app.created_at))
+        : "Not available";
+
+      document.querySelector("#modalContent").innerHTML=`
+        <div class="eyebrow">FULL GUIDE APPLICATION</div>
+        <h2>${esc(app.guide_name)}</h2>
+        <p style="color:var(--muted)">Submitted ${esc(submitted)}. Review all details below before making a decision.</p>
+
+        <div class="panel" style="margin:18px 0">
+          <h3>Contact & business</h3>
+          ${reviewField("Guide name",app.guide_name)}
+          ${reviewField("Business name",app.business_name)}
+          ${reviewField("Email",app.email)}
+          ${reviewField("Phone",app.phone)}
+          ${reviewField("Primary region",app.primary_region)}
+          ${reviewField("Main activity",app.main_activity)}
+        </div>
+
+        <div class="panel" style="margin:18px 0">
+          <h3>Experience & guiding background</h3>
+          ${reviewField("Years guiding",app.years_guiding)}
+          ${reviewField("Guiding experience",app.experience)}
+          ${reviewField("Qualifications / licences",app.qualifications)}
+          ${reviewField("Regions and areas guided",app.areas_guided)}
+          ${reviewField("Types of trips",app.trip_types)}
+          ${reviewField("Group sizes",app.group_sizes)}
+          ${reviewField("Trip inclusions",app.inclusions)}
+          ${reviewField("Short guide bio",app.bio)}
+          ${reviewField("Why they want to join",app.why_join)}
+        </div>
+
+        <div class="panel" style="margin:18px 0">
+          <h3>Online presence</h3>
+          ${reviewField("Website",app.website)}
+          ${reviewField("Instagram",app.instagram)}
+          ${reviewField("Facebook",app.facebook)}
+          ${reviewField("TikTok",app.tiktok)}
+          ${reviewField("YouTube",app.youtube)}
+          ${reviewField("Other social link",app.other_social)}
+        </div>
+
+        <div class="panel" style="margin:18px 0">
+          <h3>Uploaded photos</h3>
+          ${photoCards.length
+            ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">${photoCards.join("")}</div>`
+            : '<p style="color:var(--muted)">No photos were uploaded with this application.</p>'}
+        </div>
+
+        <div class="notice" style="margin:18px 0"><strong>Decision:</strong> Approving activates the guide account. Declining keeps the guide off the public marketplace.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="primary" type="button" id="approveFullApplication">Approve guide</button>
+          <button class="pill" type="button" id="declineFullApplication">Decline application</button>
+        </div>`;
+
+      document.querySelector("#approveFullApplication").addEventListener("click",async()=>{
+        if(!confirm(`Approve ${app.guide_name} as a Kiwi Guides guide?`)) return;
+        await reviewApplication(id,"approved");
+        document.querySelector("#modal").classList.remove("open");
+      });
+      document.querySelector("#declineFullApplication").addEventListener("click",async()=>{
+        if(!confirm(`Decline ${app.guide_name}'s application?`)) return;
+        await reviewApplication(id,"rejected");
+        document.querySelector("#modal").classList.remove("open");
+      });
+    }catch(err){
+      console.error(err);
+      document.querySelector("#modalContent").innerHTML='<div class="eyebrow">APPLICATION ERROR</div><h2>The full application could not be loaded.</h2><p>Please close this window and try again.</p>';
+    }
   }
 
   async function reviewApplication(id,status) {

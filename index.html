@@ -393,6 +393,22 @@ textarea{min-height:105px;resize:vertical}
   </section>
 </section>
 
+
+<section class="page" id="page-payment-success">
+  <section class="hero" style="text-align:center">
+    <div class="eyebrow" style="color:#d5e1d8">TEST PAYMENT COMPLETE</div>
+    <h1>Payment successful</h1>
+    <p>This was a Stripe sandbox payment. No real money was charged.</p>
+  </section>
+  <section class="section">
+    <div class="panel" style="max-width:650px;margin:auto;text-align:center">
+      <h2>Kiwi Guides test booking</h2>
+      <p style="color:var(--muted);line-height:1.65">The Stripe checkout flow is now connected for testing. The next stage will connect each real booking dynamically to its trip, date, customer and guide payout.</p>
+      <button class="primary" type="button" onclick="setPage('home')">Back to home</button>
+    </div>
+  </section>
+</section>
+
 <section class="page" id="page-confirmation">
   <div class="routebar"><button type="button" data-page="home">Home</button><span>/</span><span>Booking confirmed</span></div>
   <div class="success-box">
@@ -1174,6 +1190,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const t=trips.find(x=>sameId(x.id,currentTripId));
     if(!t || !selectedDate) return;
     if(t.isDemo) {
+      if(String(t.id)==="1") {
+        const ok = confirm("TEST MODE: Continue to Stripe's sandbox checkout for the Hawke's Bay Red Stag Hunt? No real money will be charged.");
+        if(ok) window.location.href="https://book.stripe.com/test_7sYbJ1cht8rZ8Go2UyabK00";
+        return;
+      }
       document.querySelector("#confirmationText").textContent=`${t.title} is currently a sample listing, so no real booking was sent.`;
       setPage("confirmation");
       return;
@@ -1955,6 +1976,20 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       `mailto:thebookpioneer@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 })();
+</script>
+
+
+<script>
+window.addEventListener("load", () => {
+  if (window.location.hash === "#payment-success") {
+    try { setPage("payment-success"); } catch(e) { console.error(e); }
+  }
+});
+window.addEventListener("hashchange", () => {
+  if (window.location.hash === "#payment-success") {
+    try { setPage("payment-success"); } catch(e) { console.error(e); }
+  }
+});
 </script>
 
 </body>

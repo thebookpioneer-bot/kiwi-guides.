@@ -705,6 +705,7 @@ $("#toDetails").addEventListener("click",()=>{
 });
 
 $("#toSummary").addEventListener("click",()=>{
+  try {
   const first=$("#firstName").value.trim();
   const email=$("#bookEmail").value.trim();
   const phone=$("#bookPhone").value.trim();
@@ -736,6 +737,11 @@ $("#toSummary").addEventListener("click",()=>{
   updateFinalBookingAction(t);
   $$(".booking-step").forEach(x=>x.classList.remove("active"));
   $("#bookStep3").classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+  } catch(err) {
+    console.error("Review booking error:", err);
+    alert("We couldn't open the booking review. Please check your details and try again.");
+  }
 });
 
 /* Live booking confirmation handler is attached below. */
@@ -1697,7 +1703,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         submit.disabled=false; submit.textContent="Submit for review";
       }
     });
-  });
+    } catch(err) {
+      console.error(err);
+      alert(err.message || "The listing could not be opened.");
+    }
+  }
 
   // Restore an existing approved-guide session on refresh.
   db.auth.getUser().then(async ({data})=>{

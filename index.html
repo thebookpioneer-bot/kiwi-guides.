@@ -1720,23 +1720,43 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#loginBox").style.display="none";
     document.querySelector("#dashboard").classList.add("active");
     await loadGuideListings();
-    await loadGuideBookings();
+    try { await loadGuideBookings(); } catch(err) { console.warn("Guide bookings could not be loaded:",err); }
   }
 
   document.querySelector("#loginForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     const submit=e.currentTarget.querySelector('button[type="submit"]');
     submit.disabled=true; submit.textContent="Logging in...";
+
     try {
       const email=document.querySelector("#guideLoginEmail").value.trim();
       const password=document.querySelector("#guideLoginPassword").value;
+
       const {data,error}=await db.auth.signInWithPassword({email,password});
       if(error) throw error;
-      await loadGuideDashboard(data.user);
+      if(!data?.user) throw new Error("Login did not complete.");
+
+      // Authentication succeeded. Dashboard loading is handled separately so a
+      // secondary data error cannot incorrectly tell the guide their login failed.
+      try {
+        await loadGuideDashboard(data.user);
+      } catch(dashboardErr) {
+        console.warn("Guide authenticated; dashboard refresh issue:",dashboardErr);
+        const {data:guide}=await db.from("guides").select("*").eq("user_id",data.user.id).maybeSingle();
+        if(guide){
+          currentGuide=guide;
+          currentGuideUser=data.user;
+          document.querySelector("#loginBox").style.display="none";
+          document.querySelector("#dashboard").classList.add("active");
+          try { await loadGuideListings(); } catch(e) { console.warn(e); }
+          try { await loadGuideBookings(); } catch(e) { console.warn(e); }
+        } else {
+          throw dashboardErr;
+        }
+      }
     } catch(err) {
-      console.error(err);
-      alert(err.message || "Guide login failed.");
-      await db.auth.signOut();
+      console.error("Guide login error:",err);
+      alert(err?.message || "Guide login failed.");
     } finally {
       submit.disabled=false; submit.textContent="Log in";
     }
@@ -1838,6 +1858,151 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   document.querySelector("#guidePrevMonth")?.addEventListener("click",async()=>{ await renderGuideCalendarLive(); });
   document.querySelector("#guideNextMonth")?.addEventListener("click",async()=>{ await renderGuideCalendarLive(); });
 
+
+
+  function openNewListing(){
+    if(!currentGuide){
+      alert("Please log in as an approved guide first.");
+      return;
+    }
+
+    document.querySelector("#modalContent").innerHTML=`
+      <div class="eyebrow">NEW LISTING</div>
+      <h2>Create a guided trip</h2>
+      <p style="color:var(--muted)">Complete the details below. Your listing will be sent to Kiwi Guides for approval before it appears publicly.</p>
+
+      <form id="newListingForm">
+        <label>Listing title
+          <input id="newListingTitle" required placeholder="e.g. Full Day Rotorua Trout Fishing">
+        </label>
+
+        <div class="form-grid">
+          <label>Region
+            <input id="newListingRegion" required placeholder="e.g. Bay of Plenty">
+          </label>
+          <label>Location
+            <input id="newListingLocation" placeholder="e.g. Rotorua">
+          </label>
+
+          <label>Activity type
+            <select id="newListingActivity" required>
+              <option value="">Choose activity</option>
+              <option>Fly Fishing</option>
+              <option>Fishing</option>
+              <option>Hunting</option>
+              <option>Hunting & Fishing</option>
+              <option>Back Country Adventure</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <label>Duration in hours
+            <input id="newListingDuration" type="number" min="0.5" step="0.5" placeholder="8">
+          </label>
+
+          <label>Trip price NZD
+            <input id="newListingPrice" type="number" min="1" step="1" required placeholder="e.g. 850">
+          </label>
+
+          <label>Standard booking size
+            <select id="newListingGuests">
+              <option value="1">1 person</option>
+              <option value="2">Up to 2 people</option>
+              <option value="3">Up to 3 people</option>
+              <option value="4">Up to 4 people</option>
+            </select>
+          </label>
+        </div>
+
+        <label style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <input id="newListingLargerGroups" type="checkbox" style="width:auto">
+          Larger group bookings available
+        </label>
+
+        <label id="newListingLargerGroupDetailsWrap" style="display:none">
+          Larger group details / pricing
+          <textarea id="newListingLargerGroupDetails" placeholder="Describe larger group options and any extra pricing."></textarea>
+        </label>
+
+        <label>Guided experience description
+          <textarea id="newListingDescription" required rows="7" placeholder="Describe what the day looks like, the guiding experience, what customers can expect, what is included and anything they should know."></textarea>
+        </label>
+
+        <label>Booking option
+          <select id="newListingMode">
+            <option value="instant">Instant Book</option>
+            <option value="request">Request to Book</option>
+            <option value="both" selected>Instant Book + Request to Book</option>
+          </select>
+        </label>
+
+        <button class="primary" type="submit" style="width:100%;margin-top:18px">Submit for review</button>
+      </form>`;
+
+    document.querySelector("#modal").classList.add("open");
+
+    const larger=document.querySelector("#newListingLargerGroups");
+    const largerWrap=document.querySelector("#newListingLargerGroupDetailsWrap");
+    larger?.addEventListener("change",()=>{
+      largerWrap.style.display=larger.checked?"":"none";
+    });
+
+    document.querySelector("#newListingForm")?.addEventListener("submit",async e=>{
+      e.preventDefault();
+      const submit=e.currentTarget.querySelector('button[type="submit"]');
+      submit.disabled=true;
+      submit.textContent="Submitting…";
+
+      try{
+        if(!currentGuide) throw new Error("Your guide session has expired. Please log in again.");
+
+        const price=Number(document.querySelector("#newListingPrice").value||0);
+        if(price<=0) throw new Error("Please enter a trip price.");
+
+        const listingId=crypto.randomUUID();
+        const description=document.querySelector("#newListingDescription").value.trim();
+
+        const {error}=await db.from("listings").insert({
+          id:listingId,
+          guide_id:currentGuide.id,
+          title:document.querySelector("#newListingTitle").value.trim(),
+          region:document.querySelector("#newListingRegion").value.trim(),
+          location:document.querySelector("#newListingLocation").value.trim() || null,
+          activity_type:document.querySelector("#newListingActivity").value,
+          duration_hours:document.querySelector("#newListingDuration").value ? Number(document.querySelector("#newListingDuration").value) : null,
+          price_nzd:price,
+          max_guests:Number(document.querySelector("#newListingGuests").value||1),
+          larger_groups_available:larger.checked,
+          larger_group_details:larger.checked ? (document.querySelector("#newListingLargerGroupDetails").value.trim()||null) : null,
+          short_description:description,
+          description,
+          booking_mode:document.querySelector("#newListingMode").value,
+          status:"pending"
+        });
+
+        if(error) throw error;
+
+        document.querySelector("#modalContent").innerHTML=`
+          <div class="eyebrow">LISTING SUBMITTED</div>
+          <h2>Your listing is pending review.</h2>
+          <p>Kiwi Guides will review it before it appears publicly.</p>
+          <button class="primary" type="button" id="closeNewListingSuccess" style="width:100%;margin-top:12px">Close</button>`;
+
+        document.querySelector("#closeNewListingSuccess")?.addEventListener("click",()=>{
+          document.querySelector("#modal").classList.remove("open");
+        });
+
+        await loadGuideListings();
+      }catch(err){
+        console.error("New listing error:",err);
+        alert(err?.message || "The listing could not be saved.");
+        submit.disabled=false;
+        submit.textContent="Submit for review";
+      }
+    });
+  }
+
+  document.querySelector("#addListing")?.addEventListener("click",openNewListing);
 
   async function openEditListing(listingId){
     if(!currentGuide) return;

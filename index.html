@@ -212,6 +212,24 @@ textarea{min-height:105px;resize:vertical}
 .guide-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.guide-quick-card{border:1px solid #dfe7e1;background:#fff;border-radius:16px;padding:18px;text-align:left;cursor:pointer}.guide-quick-card strong{display:block;color:var(--forest);font-size:17px;margin-bottom:4px}.guide-quick-card span{color:var(--muted);font-size:14px;line-height:1.45}.guide-attention-item{padding:12px 0;border-bottom:1px solid #ecefec}.guide-attention-item:last-child{border-bottom:0}
 @media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-dashboard-nav{position:static;display:flex;overflow-x:auto;gap:8px;padding-bottom:4px}.guide-tab-btn{white-space:nowrap;text-align:center}.guide-quick-grid{grid-template-columns:1fr}}
 
+
+.customer-dashboard-shell{max-width:1000px;margin:0 auto}
+.customer-dashboard-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.customer-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.customer-summary-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}
+.customer-summary-card span,.customer-summary-card small{color:var(--muted)}
+.customer-summary-card strong{display:block;color:var(--forest);font-size:28px;margin:4px 0}
+.customer-booking-card{border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;background:#fff}
+.customer-booking-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.customer-booking-meta{color:var(--muted);font-size:14px;line-height:1.6}
+.customer-guide-contact{background:#f4f7f4;border-radius:12px;padding:12px;margin-top:12px}
+.customer-review-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.star-row{display:flex;gap:5px;margin:8px 0}
+.star-btn{border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer;color:#bbb;padding:2px}
+.star-btn.selected{color:#c6952d}
+.customer-status{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ee;color:var(--forest);font-size:11px;font-weight:900}
+@media(max-width:700px){.customer-summary-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -224,7 +242,7 @@ textarea{min-height:105px;resize:vertical}
   <nav class="nav">
     <button class="navbtn active" data-page="home">Home</button>
     <button class="navbtn" data-page="explore">Explore</button>
-    <button class="navbtn" data-page="guides">For Guides</button><button class="navbtn" data-page="contact">About Us</button>
+    <button class="navbtn" data-page="guides">For Guides</button><button class="navbtn" data-page="customer">My Trips</button><button class="navbtn" data-page="contact">About Us</button>
     
   </nav>
 </header>
@@ -501,6 +519,61 @@ textarea{min-height:105px;resize:vertical}
   </section>
 </section>
 
+
+<section class="page" id="page-customer">
+  <section class="section">
+    <div class="customer-dashboard-shell">
+      <div id="customerLoggedOut">
+        <div class="eyebrow">MY TRIPS</div>
+        <h2>Customer account</h2>
+        <p style="color:var(--muted)">Create an account to keep your Kiwi Guides bookings together in one place.</p>
+        <div class="two-col" style="align-items:start">
+          <div class="panel">
+            <h3>Log in</h3>
+            <form id="customerLoginForm">
+              <label>Email<input id="customerLoginEmail" type="email" required autocomplete="email"></label>
+              <label>Password<input id="customerLoginPassword" type="password" required autocomplete="current-password"></label>
+              <button class="darkbtn" type="submit" style="width:100%">Log in</button>
+            </form>
+          </div>
+          <div class="panel">
+            <h3>Create customer account</h3>
+            <form id="customerSignupForm">
+              <label>Full name<input id="customerSignupName" required autocomplete="name"></label>
+              <label>Email<input id="customerSignupEmail" type="email" required autocomplete="email"></label>
+              <label>Phone (optional)<input id="customerSignupPhone" type="tel" autocomplete="tel"></label>
+              <label>Password<input id="customerSignupPassword" type="password" minlength="6" required autocomplete="new-password"></label>
+              <button class="primary" type="submit" style="width:100%">Create account</button>
+            </form>
+            <p style="font-size:12px;color:var(--muted);margin-top:10px">Older guest bookings made with the same email can be linked to this account after login.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="customerLoggedIn" style="display:none">
+        <div class="customer-dashboard-header">
+          <div>
+            <div class="eyebrow">CUSTOMER DASHBOARD</div>
+            <h2 style="margin:4px 0 6px">My Trips</h2>
+            <p style="margin:0;color:var(--muted)">View bookings, payments, guide contact details and reviews.</p>
+          </div>
+          <button class="pill" type="button" id="customerLogoutBtn">Log out</button>
+        </div>
+        <div class="customer-summary-grid">
+          <div class="customer-summary-card"><span>Upcoming</span><strong id="customerUpcomingCount">0</strong><small>Booked trips</small></div>
+          <div class="customer-summary-card"><span>Past trips</span><strong id="customerPastCount">0</strong><small>Completed dates</small></div>
+          <div class="customer-summary-card"><span>Reviews available</span><strong id="customerReviewCount">0</strong><small>Ready to rate</small></div>
+        </div>
+        <div class="panel">
+          <div class="eyebrow">YOUR BOOKINGS</div>
+          <h3>Bookings</h3>
+          <div id="customerBookingsContainer"><p style="color:var(--muted)">Loading your bookings…</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
 <section class="page" id="page-guides">
   <section class="hero">
     <div class="eyebrow" style="color:#d5e1d8">FOR NEW ZEALAND GUIDES</div>
@@ -727,6 +800,7 @@ textarea{min-height:105px;resize:vertical}
 <button class="bottom active" data-page="home">Home</button>
 <button class="bottom" data-page="explore">Explore</button>
 <button class="bottom" data-page="guides">For Guides</button>
+<button class="bottom" data-page="customer">My Trips</button>
 <button class="bottom" data-page="contact">About Us</button>
 
 </nav>
@@ -1076,6 +1150,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   window.kiwiDb = db;
 
+  let currentCustomerUser = null;
+  let customerSelectedRatings = {};
   let currentGuide = null;
   let currentGuideUser = null;
   currentRequestMode = false;
@@ -1539,9 +1615,12 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         return_url:window.location.origin
       };
 
+      const {data:{session:bookingSession}}=await db.auth.getSession();
+      const bookingHeaders={"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY};
+      if(bookingSession?.access_token) bookingHeaders["Authorization"]=`Bearer ${bookingSession.access_token}`;
       const response = await fetch(`${SUPABASE_URL}/functions/v1/create-booking`, {
         method:"POST",
-        headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+        headers:bookingHeaders,
         body:JSON.stringify(payload)
       });
       const result = await response.json();
@@ -1692,6 +1771,165 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     }
   });
 
+
+
+  function customerDateNZ(dateStr){
+    return new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(dateStr+"T12:00:00"));
+  }
+  function customerMoney(v){
+    return new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
+  }
+  function reviewEligible(b){
+    if(b.payment_status!=="paid" || !["confirmed","completed"].includes(b.status)) return false;
+    const unlock=new Date(b.booking_date+"T12:00:00");
+    unlock.setDate(unlock.getDate()+2);
+    return new Date()>=unlock;
+  }
+  function reviewUnlockText(b){
+    const unlock=new Date(b.booking_date+"T12:00:00");
+    unlock.setDate(unlock.getDate()+2);
+    return new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(unlock);
+  }
+  async function claimCustomerBookings(){
+    const {error}=await db.rpc("claim_my_customer_bookings");
+    if(error) console.warn("Could not link older bookings:",error);
+  }
+  async function loadCustomerDashboard(){
+    const {data:{user}}=await db.auth.getUser();
+    currentCustomerUser=user||null;
+    const out=document.querySelector("#customerLoggedOut");
+    const inside=document.querySelector("#customerLoggedIn");
+    if(!user){
+      if(out) out.style.display="";
+      if(inside) inside.style.display="none";
+      return;
+    }
+    if(out) out.style.display="none";
+    if(inside) inside.style.display="";
+    await claimCustomerBookings();
+
+    const {data:bookings,error}=await db.from("bookings")
+      .select("id,guide_id,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,listings(title,location,region),guides(display_name,business_name,email,phone)")
+      .eq("customer_user_id",user.id)
+      .order("booking_date",{ascending:false});
+
+    const container=document.querySelector("#customerBookingsContainer");
+    if(error){
+      console.error(error);
+      if(container) container.innerHTML='<div class="notice">Your bookings could not be loaded.</div>';
+      return;
+    }
+    const rows=bookings||[];
+    const ids=rows.map(x=>x.id);
+    const reviewMap={};
+    if(ids.length){
+      const {data:reviews}=await db.from("guide_reviews").select("booking_id,rating,review_text").in("booking_id",ids);
+      (reviews||[]).forEach(r=>reviewMap[r.booking_id]=r);
+    }
+
+    const today=new Date().toISOString().slice(0,10);
+    document.querySelector("#customerUpcomingCount").textContent=rows.filter(b=>b.booking_date>=today&&!["cancelled","declined"].includes(b.status)).length;
+    document.querySelector("#customerPastCount").textContent=rows.filter(b=>b.booking_date<today).length;
+    document.querySelector("#customerReviewCount").textContent=rows.filter(b=>reviewEligible(b)&&!reviewMap[b.id]).length;
+
+    if(!container) return;
+    if(!rows.length){
+      container.innerHTML='<p style="color:var(--muted)">No bookings are linked to this account yet.</p>';
+      return;
+    }
+
+    container.innerHTML=rows.map(b=>{
+      const g=b.guides||{};
+      const guideName=g.business_name||g.display_name||"Your guide";
+      const trip=b.listings?.title||"Guided trip";
+      const loc=[b.listings?.location,b.listings?.region].filter(Boolean).join(", ");
+      const review=reviewMap[b.id];
+      let status=b.status;
+      if(b.payment_status==="paid"&&b.status==="confirmed") status="Confirmed & paid";
+      else if(b.status==="pending"&&b.booking_type==="request") status="Awaiting guide response";
+      else if(b.status==="pending") status="Payment pending";
+
+      let reviewHtml="";
+      if(review){
+        reviewHtml=`<div class="customer-review-box"><strong>Your review</strong><div style="font-size:21px;color:#c6952d">${"★".repeat(review.rating)}${"☆".repeat(5-review.rating)}</div>${review.review_text?`<p>${review.review_text}</p>`:""}</div>`;
+      }else if(reviewEligible(b)){
+        reviewHtml=`<div class="customer-review-box">
+          <strong>Review ${guideName}</strong>
+          <p style="color:var(--muted)">Choose 1–5 stars.</p>
+          <div class="star-row">${[1,2,3,4,5].map(n=>`<button class="star-btn" type="button" data-booking="${b.id}" data-rating="${n}">★</button>`).join("")}</div>
+          <textarea class="customer-review-text" data-booking="${b.id}" rows="3" placeholder="Optional review"></textarea>
+          <button class="primary submit-guide-review" type="button" data-booking="${b.id}" data-guide="${b.guide_id}" style="margin-top:8px">Submit review</button>
+        </div>`;
+      }else if(b.payment_status==="paid"&&["confirmed","completed"].includes(b.status)){
+        reviewHtml=`<div class="customer-review-box"><span style="color:var(--muted)">Reviews open on ${reviewUnlockText(b)}, 2 days after the trip.</span></div>`;
+      }
+
+      return `<div class="customer-booking-card">
+        <div class="customer-booking-head">
+          <div><h3 style="margin:0 0 5px">${trip}</h3><div class="customer-booking-meta">${customerDateNZ(b.booking_date)}${loc?` • ${loc}`:""}<br>${b.guest_count} ${b.guest_count===1?"person":"people"} • ${customerMoney(b.total_amount_nzd)}</div></div>
+          <span class="customer-status">${status}</span>
+        </div>
+        <div class="customer-guide-contact"><strong>${guideName}</strong><div style="color:var(--muted);margin:4px 0">Guide contact details</div>${g.email?`<div><a href="mailto:${g.email}">${g.email}</a></div>`:""}${g.phone?`<div><a href="tel:${g.phone}">${g.phone}</a></div>`:""}</div>
+        ${reviewHtml}
+      </div>`;
+    }).join("");
+
+    container.querySelectorAll(".star-btn").forEach(btn=>btn.addEventListener("click",()=>{
+      const id=btn.dataset.booking, rating=Number(btn.dataset.rating);
+      customerSelectedRatings[id]=rating;
+      container.querySelectorAll(`.star-btn[data-booking="${id}"]`).forEach(star=>star.classList.toggle("selected",Number(star.dataset.rating)<=rating));
+    }));
+
+    container.querySelectorAll(".submit-guide-review").forEach(btn=>btn.addEventListener("click",async()=>{
+      const id=btn.dataset.booking, rating=customerSelectedRatings[id];
+      if(!rating){alert("Please choose a star rating first.");return;}
+      const text=container.querySelector(`.customer-review-text[data-booking="${id}"]`)?.value.trim()||null;
+      btn.disabled=true;btn.textContent="Submitting…";
+      const {error}=await db.from("guide_reviews").insert({
+        booking_id:id,guide_id:btn.dataset.guide,customer_user_id:user.id,rating,review_text:text
+      });
+      if(error){alert(error.message||"Review could not be submitted.");btn.disabled=false;btn.textContent="Submit review";return;}
+      await loadCustomerDashboard();
+    }));
+  }
+
+  document.querySelector("#customerSignupForm")?.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const btn=e.currentTarget.querySelector('button[type="submit"]');
+    btn.disabled=true;btn.textContent="Creating account…";
+    try{
+      const {data,error}=await db.auth.signUp({
+        email:document.querySelector("#customerSignupEmail").value.trim(),
+        password:document.querySelector("#customerSignupPassword").value,
+        options:{data:{full_name:document.querySelector("#customerSignupName").value.trim(),phone:document.querySelector("#customerSignupPhone").value.trim()},emailRedirectTo:`${window.location.origin}/#customer`}
+      });
+      if(error) throw error;
+      if(data?.session) await loadCustomerDashboard();
+      else alert("Account created. Please check your email to confirm it, then log in under My Trips.");
+    }catch(err){alert(err?.message||"Customer account could not be created.");}
+    finally{btn.disabled=false;btn.textContent="Create account";}
+  });
+
+  document.querySelector("#customerLoginForm")?.addEventListener("submit",async e=>{
+    e.preventDefault();
+    const btn=e.currentTarget.querySelector('button[type="submit"]');
+    btn.disabled=true;btn.textContent="Logging in…";
+    try{
+      const {error}=await db.auth.signInWithPassword({email:document.querySelector("#customerLoginEmail").value.trim(),password:document.querySelector("#customerLoginPassword").value});
+      if(error) throw error;
+      await loadCustomerDashboard();
+    }catch(err){alert(err?.message||"Customer login failed.");}
+    finally{btn.disabled=false;btn.textContent="Log in";}
+  });
+
+  document.querySelector("#customerLogoutBtn")?.addEventListener("click",async()=>{
+    await db.auth.signOut();
+    currentCustomerUser=null;
+    await loadCustomerDashboard();
+  });
+
+  document.querySelectorAll('[data-page="customer"]').forEach(btn=>btn.addEventListener("click",()=>setTimeout(()=>loadCustomerDashboard(),0)));
+  loadCustomerDashboard().catch(err=>console.warn("Customer dashboard restore:",err));
 
   async function loadPublicBookingStatus(token, sessionId="") {
     const title=document.querySelector("#bookingStatusTitle");

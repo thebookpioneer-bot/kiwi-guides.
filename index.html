@@ -412,7 +412,7 @@ textarea{min-height:105px;resize:vertical}
   <section class="section">
     <div class="panel" style="max-width:650px;margin:auto;text-align:center">
       <h2>Kiwi Guides test booking</h2>
-      <p style="color:var(--muted);line-height:1.65">The Stripe checkout flow is now connected for testing. The next stage will connect each real booking dynamically to its trip, date, customer and guide payout.</p>
+      <p style="color:var(--muted);line-height:1.65">Stripe sandbox checkout completed successfully. No real money was charged. The production version will confirm the booking only after Stripe verifies the payment.</p>
       <button class="primary" type="button" onclick="setPage('home')">Back to home</button>
     </div>
   </section>
@@ -876,6 +876,36 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   let currentGuideUser = null;
   let currentRequestMode = false;
 
+  const stripeSandboxPaymentLinks = {
+    hawkes_red_stag: "https://book.stripe.com/test_7sYbJ1cht8rZ8Go2UyabK00",
+    hawkes_fallow_buck: "https://book.stripe.com/test_bJe6oH1CP4bJbSAfHkabK01",
+    hawkes_wild_pig: "https://book.stripe.com/test_bJeeVd0yLcIf7CkdzcabK02",
+    rotorua_trout: "https://book.stripe.com/test_00w9AT1CPbEb4q866KabK03"
+  };
+
+  function getStripeSandboxPaymentUrl(t){
+    if(!t || !t.isDemo) return null;
+    if(String(t.id)==="1"){
+      if(String(currentPricingOptionId)==="demo-animal-fallow") return stripeSandboxPaymentLinks.hawkes_fallow_buck;
+      if(String(currentPricingOptionId)==="demo-animal-pig") return stripeSandboxPaymentLinks.hawkes_wild_pig;
+      return stripeSandboxPaymentLinks.hawkes_red_stag;
+    }
+    if(String(t.id)==="3") return stripeSandboxPaymentLinks.rotorua_trout;
+    return null;
+  }
+
+  function openStripeSandboxCheckout(t){
+    const url=getStripeSandboxPaymentUrl(t);
+    if(!url){
+      alert("Stripe test checkout is not enabled for this sample listing.");
+      return false;
+    }
+    const email=document.querySelector("#bookEmail")?.value.trim();
+    const finalUrl=email ? `${url}?prefilled_email=${encodeURIComponent(email)}` : url;
+    window.location.assign(finalUrl);
+    return true;
+  }
+
   function bookingModeForTrip(t){
     const raw=(t?.bookingMode || "").toLowerCase();
     if(raw==="both") return "both";
@@ -936,10 +966,10 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       btn.textContent="Send booking request";
       notice.textContent="No payment is taken yet. The guide will review your request first.";
     } else {
-      btn.textContent=t.isDemo ? "Continue to secure test payment" : "Continue to secure payment";
+      btn.textContent=t.isDemo ? "Pay securely with Stripe — TEST" : "Pay securely with Stripe";
       notice.textContent=t.isDemo
-        ? "TEST MODE — Stripe sandbox checkout will open next. No real money will be charged."
-        : "You’ll continue to secure payment after confirming these booking details.";
+        ? "Instant Book: tapping the button below opens Stripe sandbox checkout. No real money will be charged."
+        : "Instant Book: payment is required before the booking can be confirmed.";
     }
   }
   let currentBookingPrice = 0;
@@ -1286,18 +1316,13 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         setPage("confirmation");
         return;
       }
-      if(String(t.id)==="1") {
-        window.location.href="https://book.stripe.com/test_7sYbJ1cht8rZ8Go2UyabK00";
-        return;
-      }
-      document.querySelector("#confirmationText").textContent=`${t.title} is currently a sample listing, so no real booking was sent.`;
-      setPage("confirmation");
+      openStripeSandboxCheckout(t);
       return;
     }
     btn.disabled=true;
     btn.textContent="Saving booking...";
     try {
-      const requestedStatus = (currentRequestMode || t.bookingMode==="request") ? "pending" : "confirmed";
+      const requestedStatus = "pending";
       const {data:authData} = await db.auth.getUser();
       const userId = authData?.user?.id || null;
       const {error} = await db.from("bookings").insert({
@@ -1316,20 +1341,18 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       });
       if(error) throw error;
       const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"));
-      document.querySelector("#confirmationText").textContent = requestedStatus==="confirmed"
-        ? `${t.title} on ${pretty} has been booked.`
-        : `Your request for ${t.title} on ${pretty} has been sent to the guide for approval.`;
-      if(requestedStatus==="confirmed") {
-        liveAvailabilityCache[t.backendId] = liveAvailabilityCache[t.backendId] || {};
-        liveAvailabilityCache[t.backendId][selectedDate]=false;
+      if(currentRequestMode || bookingModeForTrip(t)==="request") {
+        document.querySelector("#confirmationText").textContent = `Your request for ${t.title} on ${pretty} has been sent to the guide for approval.`;
+        setPage("confirmation");
+      } else {
+        alert("This real listing still needs its dynamic Stripe Checkout session enabled. The booking has not been confirmed or charged.");
       }
-      setPage("confirmation");
     } catch(err) {
       console.error(err);
       alert(err.message?.includes("not available") ? "That date is no longer available. Please choose another day." : "The booking could not be saved. Please try again.");
     } finally {
       btn.disabled=false;
-      btn.textContent="Confirm booking";
+      updateFinalBookingAction(t);
     }
   });
 

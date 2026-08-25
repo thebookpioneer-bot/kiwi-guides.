@@ -200,6 +200,18 @@ textarea{min-height:105px;resize:vertical}
   .public-guide-avatar{width:84px;height:84px}
 }
 
+
+.guide-dashboard-shell{max-width:1180px;margin:0 auto;padding:18px 0 40px}
+.guide-dashboard-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.guide-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.guide-summary-card{background:#fff;border:1px solid #e3e8e4;border-radius:16px;padding:16px;text-align:left;box-shadow:0 8px 24px rgba(20,45,30,.06);cursor:pointer}
+.guide-summary-card strong{display:block;font-size:28px;color:var(--forest);margin:4px 0}.guide-summary-card span,.guide-summary-card small{color:var(--muted)}
+.guide-dashboard-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;align-items:start}
+.guide-dashboard-nav{display:flex;flex-direction:column;gap:8px;position:sticky;top:14px}.guide-tab-btn{border:1px solid #dfe7e1;background:#fff;border-radius:12px;padding:12px 14px;text-align:left;font-weight:800;cursor:pointer}.guide-tab-btn.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+.guide-tab-panel{display:none}.guide-tab-panel.active{display:block}
+.guide-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.guide-quick-card{border:1px solid #dfe7e1;background:#fff;border-radius:16px;padding:18px;text-align:left;cursor:pointer}.guide-quick-card strong{display:block;color:var(--forest);font-size:17px;margin-bottom:4px}.guide-quick-card span{color:var(--muted);font-size:14px;line-height:1.45}.guide-attention-item{padding:12px 0;border-bottom:1px solid #ecefec}.guide-attention-item:last-child{border-bottom:0}
+@media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-dashboard-nav{position:static;display:flex;overflow-x:auto;gap:8px;padding-bottom:4px}.guide-tab-btn{white-space:nowrap;text-align:center}.guide-quick-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -535,47 +547,126 @@ textarea{min-height:105px;resize:vertical}
     </div>
     <div class="tab-panel" id="tab-login">
       <div id="loginBox" class="two-col"><div class="panel"><h3>Guide log in</h3><form id="loginForm"><label>Email<input id="guideLoginEmail" type="email" required autocomplete="email"></label><label>Password<input id="guideLoginPassword" type="password" required autocomplete="current-password"></label><button class="darkbtn" type="submit">Log in</button></form></div><div class="panel"><h3>Guide account</h3><p>Manage your profile, social links, availability, photos and multiple listings.</p></div></div>
-      <div class="dashboard" id="dashboard">
-        <div class="profile-layout">
-          <div class="panel"><h3>My profile</h3><label>Guide name<input id="guideProfileName"></label><label>About me<textarea id="guideProfileBio"></textarea></label><button class="darkbtn" type="button" id="saveProfile">Save profile</button><button class="pill" type="button" id="guideSignOut" style="margin-top:8px">Sign out</button></div>
-          <div class="panel"><h3>Social media</h3><div class="social-grid"><label>Instagram<input id="guideInstagram"></label><label>Facebook<input id="guideFacebook"></label><label>TikTok<input id="guideTiktok"></label><label>YouTube<input id="guideYoutube"></label><label>Website<input id="guideWebsite"></label><label>Contact email<input id="guideContactEmail" readonly></label></div></div>
-        </div>
-        <div class="panel" style="margin-top:16px">
-          <div class="eyebrow">AVAILABILITY CALENDAR</div>
-          <h3>Choose the days you are available for bookings</h3>
-          <p style="color:var(--muted)">Tap a day to switch it between available and unavailable. Green days can be booked by customers. Days with an × cannot be booked.</p>
-          <div class="availability-controls">
-            <label>Calendar for listing
-              <select id="guideAvailabilityListing"><option value="">Log in to load listings</option></select>
-            </label>
-            <span class="save-state" id="availabilitySaveState">Log in to manage availability</span>
-          </div>
-          <div class="calendar-wrap">
-            <div class="calendar-toolbar">
-              <button class="calendar-nav" type="button" id="guidePrevMonth" aria-label="Previous month">‹</button>
-              <h3 id="guideMonthTitle">September 2026</h3>
-              <button class="calendar-nav" type="button" id="guideNextMonth" aria-label="Next month">›</button>
-            </div>
-            <div class="calendar-legend">
-              <span class="legend-item"><span class="legend-swatch available">✓</span> Available</span>
-              <span class="legend-item"><span class="legend-swatch unavailable">×</span> Unavailable</span>
-            </div>
-            <div class="month-grid" id="guideCalendar"></div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-top:16px">
-          <div class="eyebrow">BOOKINGS</div>
-          <h3>Booking requests & upcoming trips</h3>
-          <p style="color:var(--muted)">Request to Book trips appear here for you to accept or decline. Instant Book trips appear once payment is confirmed.</p>
-          <div id="guideBookingsContainer"><p style="color:var(--muted)">Log in to load bookings.</p></div>
-        </div>
-        <div class="panel" style="margin-top:16px"><h3>My listings</h3><p>Each listing can use Instant Book, Request to Book or both. New listings are submitted for approval before they appear publicly.</p>
-          <div id="guideListingsContainer"><p style="color:var(--muted)">Log in to load your listings.</p></div>
-          <button class="primary" id="addListing" type="button">+ Add another listing</button>
-        </div>
+      
+<div class="dashboard" id="dashboard">
+  <div class="guide-dashboard-shell">
+    <div class="guide-dashboard-header">
+      <div>
+        <div class="eyebrow">GUIDE DASHBOARD</div>
+        <h2 style="margin:4px 0 6px">Welcome back, <span id="guideDashboardName">Guide</span></h2>
+        <p style="margin:0;color:var(--muted)">Manage your bookings, listings, calendar and guide profile.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="primary" type="button" id="dashboardAddListing">+ Add listing</button>
+        <button class="pill" type="button" id="guideSignOut">Sign out</button>
       </div>
     </div>
+
+    <div class="guide-summary-grid">
+      <button class="guide-summary-card" type="button" data-guide-tab="bookings">
+        <span>Pending requests</span><strong id="guidePendingCount">0</strong><small>Needs your response</small>
+      </button>
+      <button class="guide-summary-card" type="button" data-guide-tab="bookings">
+        <span>Upcoming bookings</span><strong id="guideUpcomingCount">0</strong><small>Confirmed paid trips</small>
+      </button>
+      <button class="guide-summary-card" type="button" data-guide-tab="listings">
+        <span>Active listings</span><strong id="guideActiveListingCount">0</strong><small>Live listings</small>
+      </button>
+      <button class="guide-summary-card" type="button" data-guide-tab="listings">
+        <span>Awaiting review</span><strong id="guidePendingListingCount">0</strong><small>Pending approval</small>
+      </button>
+    </div>
+
+    <div class="guide-dashboard-layout">
+      <aside class="guide-dashboard-nav">
+        <button class="guide-tab-btn active" type="button" data-guide-tab="overview">Overview</button>
+        <button class="guide-tab-btn" type="button" data-guide-tab="bookings">Bookings</button>
+        <button class="guide-tab-btn" type="button" data-guide-tab="listings">My Listings</button>
+        <button class="guide-tab-btn" type="button" data-guide-tab="availability">Availability</button>
+        <button class="guide-tab-btn" type="button" data-guide-tab="profile">Profile</button>
+      </aside>
+
+      <main class="guide-dashboard-content">
+        <section class="guide-tab-panel active" data-guide-panel="overview">
+          <div class="panel">
+            <div class="eyebrow">OVERVIEW</div>
+            <h3>What needs your attention</h3>
+            <div id="guideAttentionList"><p style="color:var(--muted)">Your latest activity will appear here.</p></div>
+          </div>
+          <div class="guide-quick-grid">
+            <button class="guide-quick-card" type="button" data-guide-tab="bookings"><strong>Review bookings</strong><span>Accept or decline customer requests.</span></button>
+            <button class="guide-quick-card" type="button" data-guide-tab="listings"><strong>Manage listings</strong><span>Add a new trip or edit an existing listing.</span></button>
+            <button class="guide-quick-card" type="button" data-guide-tab="availability"><strong>Update availability</strong><span>Open and close dates on your booking calendar.</span></button>
+            <button class="guide-quick-card" type="button" data-guide-tab="profile"><strong>Guide profile</strong><span>Update the information customers see.</span></button>
+          </div>
+        </section>
+
+        <section class="guide-tab-panel" data-guide-panel="bookings">
+          <div class="panel">
+            <div class="eyebrow">BOOKINGS</div>
+            <h3>Booking requests & upcoming trips</h3>
+            <p style="color:var(--muted)">Request to Book trips appear here for you to accept or decline. Instant Book trips appear once payment is confirmed.</p>
+            <div id="guideBookingsContainer"><p style="color:var(--muted)">Loading bookings…</p></div>
+          </div>
+        </section>
+
+        <section class="guide-tab-panel" data-guide-panel="listings">
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+              <div><div class="eyebrow">MY LISTINGS</div><h3 style="margin-bottom:4px">Your guided experiences</h3></div>
+              <button class="primary" id="addListing" type="button">+ Add another listing</button>
+            </div>
+            <p style="color:var(--muted)">New listings and edits are reviewed by Kiwi Guides before going live.</p>
+            <div id="guideListingsContainer"><p style="color:var(--muted)">Loading your listings…</p></div>
+          </div>
+        </section>
+
+        <section class="guide-tab-panel" data-guide-panel="availability">
+          <div class="panel">
+            <div class="eyebrow">AVAILABILITY CALENDAR</div>
+            <h3>Choose the days you are available</h3>
+            <p style="color:var(--muted)">Green days can be booked by customers. Days with an × cannot be booked.</p>
+            <div class="availability-controls">
+              <label>Calendar for listing<select id="guideAvailabilityListing"><option value="">Log in to load listings</option></select></label>
+              <span class="save-state" id="availabilitySaveState">Select a listing</span>
+            </div>
+            <div class="calendar-wrap">
+              <div class="calendar-toolbar">
+                <button class="calendar-nav" type="button" id="guidePrevMonth" aria-label="Previous month">‹</button>
+                <h3 id="guideMonthTitle">September 2026</h3>
+                <button class="calendar-nav" type="button" id="guideNextMonth" aria-label="Next month">›</button>
+              </div>
+              <div class="calendar-legend">
+                <span class="legend-item"><span class="legend-swatch available">✓</span> Available</span>
+                <span class="legend-item"><span class="legend-swatch unavailable">×</span> Unavailable</span>
+              </div>
+              <div class="month-grid" id="guideCalendar"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="guide-tab-panel" data-guide-panel="profile">
+          <div class="profile-layout">
+            <div class="panel">
+              <div class="eyebrow">PROFILE</div><h3>My profile</h3>
+              <label>Guide name<input id="guideProfileName"></label>
+              <label>About me<textarea id="guideProfileBio"></textarea></label>
+              <button class="darkbtn" type="button" id="saveProfile">Save profile</button>
+            </div>
+            <div class="panel">
+              <div class="eyebrow">CONTACT & SOCIALS</div><h3>Your details</h3>
+              <div class="social-grid">
+                <label>Instagram<input id="guideInstagram"></label><label>Facebook<input id="guideFacebook"></label>
+                <label>TikTok<input id="guideTiktok"></label><label>YouTube<input id="guideYoutube"></label>
+                <label>Website<input id="guideWebsite"></label><label>Contact email<input id="guideContactEmail" readonly></label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>    </div>
   </section>
 </section>
 
@@ -1721,6 +1812,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#dashboard").classList.add("active");
     await loadGuideListings();
     try { await loadGuideBookings(); } catch(err) { console.warn("Guide bookings could not be loaded:",err); }
+    try { await refreshGuideDashboardStats(); } catch(err) { console.warn("Guide dashboard summary could not be refreshed:",err); }
   }
 
   document.querySelector("#loginForm")?.addEventListener("submit", async e => {
@@ -1993,6 +2085,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         });
 
         await loadGuideListings();
+        try { await refreshGuideDashboardStats(); } catch(e) { console.warn(e); }
       }catch(err){
         console.error("New listing error:",err);
         alert(err?.message || "The listing could not be saved.");
@@ -2003,6 +2096,39 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   }
 
   document.querySelector("#addListing")?.addEventListener("click",openNewListing);
+
+
+  function switchGuideDashboardTab(tab){
+    document.querySelectorAll(".guide-tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.guideTab===tab));
+    document.querySelectorAll(".guide-tab-panel").forEach(p=>p.classList.toggle("active",p.dataset.guidePanel===tab));
+  }
+  document.querySelectorAll("[data-guide-tab]").forEach(el=>el.addEventListener("click",()=>{ if(el.dataset.guideTab) switchGuideDashboardTab(el.dataset.guideTab); }));
+  document.querySelector("#dashboardAddListing")?.addEventListener("click",()=>{ switchGuideDashboardTab("listings"); openNewListing(); });
+
+  async function refreshGuideDashboardStats(){
+    if(!currentGuide) return;
+    const n=document.querySelector("#guideDashboardName"); if(n) n.textContent=currentGuide.display_name||currentGuide.business_name||"Guide";
+    const {data:listingsData}=await db.from("listings").select("id,title,status").eq("guide_id",currentGuide.id);
+    const rows=listingsData||[];
+    const active=rows.filter(x=>x.status==="approved").length, pendingListings=rows.filter(x=>x.status==="pending").length;
+    document.querySelector("#guideActiveListingCount").textContent=active;
+    document.querySelector("#guidePendingListingCount").textContent=pendingListings;
+    const {data:bookingData}=await db.from("bookings").select("status,payment_status,booking_type,accepted_at,booking_date").eq("guide_id",currentGuide.id);
+    const bookings=bookingData||[], today=new Date().toISOString().slice(0,10);
+    const pending=bookings.filter(b=>b.booking_type==="request"&&b.status==="pending"&&!b.accepted_at).length;
+    const upcoming=bookings.filter(b=>b.status==="confirmed"&&b.payment_status==="paid"&&b.booking_date>=today).length;
+    document.querySelector("#guidePendingCount").textContent=pending;
+    document.querySelector("#guideUpcomingCount").textContent=upcoming;
+    const attention=document.querySelector("#guideAttentionList");
+    if(attention){
+      const items=[];
+      if(pending) items.push(`<div class="guide-attention-item"><strong>${pending} booking request${pending===1?"":"s"} waiting</strong><div style="color:var(--muted)">Open Bookings to accept or decline.</div></div>`);
+      if(pendingListings) items.push(`<div class="guide-attention-item"><strong>${pendingListings} listing${pendingListings===1?"":"s"} awaiting approval</strong><div style="color:var(--muted)">Kiwi Guides is reviewing them.</div></div>`);
+      if(upcoming) items.push(`<div class="guide-attention-item"><strong>${upcoming} upcoming paid trip${upcoming===1?"":"s"}</strong><div style="color:var(--muted)">Check the customer details before the trip.</div></div>`);
+      if(!items.length) items.push(`<div class="guide-attention-item"><strong>You're all caught up</strong><div style="color:var(--muted)">No urgent actions right now.</div></div>`);
+      attention.innerHTML=items.join("");
+    }
+  }
 
   async function openEditListing(listingId){
     if(!currentGuide) return;

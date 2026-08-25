@@ -466,6 +466,18 @@ textarea{min-height:105px;resize:vertical}
   </div>
 </section>
 
+
+<section class="page" id="page-booking-status">
+  <section class="section">
+    <button class="back" type="button" onclick="showPage('home')">← Back to Kiwi Guides</button>
+    <div class="panel" style="max-width:720px;margin:24px auto" id="bookingStatusCard">
+      <div class="eyebrow">BOOKING STATUS</div>
+      <h2 id="bookingStatusTitle">Loading your booking…</h2>
+      <div id="bookingStatusBody"><p style="color:var(--muted)">Please wait.</p></div>
+    </div>
+  </section>
+</section>
+
 <section class="page" id="page-guides">
   <section class="hero">
     <div class="eyebrow" style="color:#d5e1d8">FOR NEW ZEALAND GUIDES</div>
@@ -539,6 +551,13 @@ textarea{min-height:105px;resize:vertical}
             </div>
             <div class="month-grid" id="guideCalendar"></div>
           </div>
+        </div>
+
+        <div class="panel" style="margin-top:16px">
+          <div class="eyebrow">BOOKINGS</div>
+          <h3>Booking requests & upcoming trips</h3>
+          <p style="color:var(--muted)">Request to Book trips appear here for you to accept or decline. Instant Book trips appear once payment is confirmed.</p>
+          <div id="guideBookingsContainer"><p style="color:var(--muted)">Log in to load bookings.</p></div>
         </div>
         <div class="panel" style="margin-top:16px"><h3>My listings</h3><p>Each listing can use Instant Book, Request to Book or both. New listings are submitted for approval before they appear publicly.</p>
           <div id="guideListingsContainer"><p style="color:var(--muted)">Log in to load your listings.</p></div>
@@ -1387,6 +1406,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const btn=document.querySelector("#confirmBooking");
     const t=trips.find(x=>sameId(x.id,currentTripId));
     if(!t || !selectedDate) return;
+
     if(t.isDemo) {
       if(currentRequestMode || bookingModeForTrip(t)==="request") {
         const note=document.querySelector("#bookNotes")?.value.trim();
@@ -1398,42 +1418,68 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       openStripeSandboxCheckout(t);
       return;
     }
+
     btn.disabled=true;
-    btn.textContent="Saving booking...";
+    btn.textContent=currentRequestMode ? "Sending request..." : "Opening secure payment...";
+
     try {
-      const requestedStatus = "pending";
-      const {data:authData} = await db.auth.getUser();
-      const userId = authData?.user?.id || null;
-      const {error} = await db.from("bookings").insert({
+      const bookingType = currentRequestMode ? "request" : "instant";
+      const payload = {
         listing_id:t.backendId,
-        guide_id:t.guideId,
-        customer_user_id:userId,
+        booking_date:selectedDate,
+        booking_type:bookingType,
         customer_name:`${document.querySelector("#firstName").value.trim()} ${document.querySelector("#lastName").value.trim()}`.trim(),
         customer_email:document.querySelector("#bookEmail").value.trim(),
         customer_phone:document.querySelector("#bookPhone").value.trim(),
         customer_message:document.querySelector("#bookNotes")?.value.trim() || null,
-        booking_date:selectedDate,
         guest_count:Number(document.querySelector("#bookingPeople").value||1),
-        total_amount_nzd:currentBookingPrice,
-        pricing_option_id:currentPricingOptionId,
-        status:requestedStatus
+        pricing_option_id:currentPricingOptionId || null,
+        return_url:window.location.origin
+      };
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/create-booking`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+        body:JSON.stringify(payload)
       });
-      if(error) throw error;
-      const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"));
-      if(currentRequestMode || bookingModeForTrip(t)==="request") {
-        document.querySelector("#confirmationText").textContent = `Your request for ${t.title} on ${pretty} has been sent to the guide for approval.`;
-        setPage("confirmation");
-      } else {
-        alert("This real listing still needs its dynamic Stripe Checkout session enabled. The booking has not been confirmed or charged.");
+      const result = await response.json();
+      if(!response.ok) throw new Error(result.error || "The booking could not be created.");
+
+      if(bookingType==="instant") {
+        if(!result.checkout_url) throw new Error("Secure Stripe Checkout is not configured yet.");
+        window.location.assign(result.checkout_url);
+        return;
       }
+
+      const statusUrl = `${window.location.origin}/#booking-status=${result.public_token}`;
+      document.querySelector("#confirmationText").innerHTML = `
+        Your request for <strong>${t.title}</strong> has been sent to the guide.<br><br>
+        No payment has been taken. The guide must accept your request first.<br><br>
+        <button class="primary" type="button" onclick="window.location.href='${statusUrl}'">Check request status</button>
+        <p style="font-size:12px;color:var(--muted);margin-top:10px">Save this page so you can return to it. Once the guide accepts, a Pay now button will appear.</p>`;
+      setPage("confirmation");
     } catch(err) {
       console.error(err);
-      alert(err.message?.includes("not available") ? "That date is no longer available. Please choose another day." : "The booking could not be saved. Please try again.");
+      alert(err.message || "The booking could not be created. Please try again.");
     } finally {
       btn.disabled=false;
       updateFinalBookingAction(t);
     }
   });
+
+
+  async function openBookingStatusFromHash(){
+    const hash=window.location.hash||"";
+    const match=hash.match(/^#booking-status=([^&]+)(?:&session_id=(.+))?$/);
+    if(!match) return false;
+    const token=decodeURIComponent(match[1]);
+    const sessionId=match[2]?decodeURIComponent(match[2]):"";
+    showPage("booking-status");
+    await loadPublicBookingStatus(token,sessionId);
+    return true;
+  }
+  window.addEventListener("load",()=>{ openBookingStatusFromHash(); });
+  window.addEventListener("hashchange",()=>{ openBookingStatusFromHash(); });
 
   document.querySelector("#applyForm")?.addEventListener("submit", async e => {
     e.preventDefault();
@@ -1509,6 +1555,104 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     }
   });
 
+
+  async function loadPublicBookingStatus(token, sessionId="") {
+    const title=document.querySelector("#bookingStatusTitle");
+    const body=document.querySelector("#bookingStatusBody");
+    if(!title || !body) return;
+    title.textContent="Loading your booking…";
+    body.innerHTML='<p style="color:var(--muted)">Checking the latest status.</p>';
+    try {
+      const r=await fetch(`${SUPABASE_URL}/functions/v1/booking-status`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+        body:JSON.stringify({public_token:token,session_id:sessionId||null})
+      });
+      const b=await r.json();
+      if(!r.ok) throw new Error(b.error||"Booking could not be loaded.");
+      const money=new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(b.total_amount_nzd||0));
+      const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(b.booking_date+"T12:00:00"));
+      let statusText="Awaiting guide response";
+      let action="";
+      if(b.status==="declined") statusText="Request declined";
+      else if(b.payment_status==="paid" && b.status==="confirmed") statusText="Confirmed & paid";
+      else if(b.accepted_at && b.payment_status!=="paid") {
+        statusText="Accepted — payment required";
+        if(b.checkout_url) action=`<button class="primary" type="button" onclick="window.location.assign('${b.checkout_url}')">Pay now securely with Stripe</button>`;
+      } else if(b.booking_type==="instant") statusText="Payment pending";
+
+      title.textContent=b.trip_title;
+      body.innerHTML=`
+        <div class="summary">
+          <div><span>Status</span><strong>${statusText}</strong></div>
+          <div><span>Date</span><strong>${pretty}</strong></div>
+          <div><span>People</span><strong>${b.guest_count}</strong></div>
+          <div><span>Total</span><strong>${money}</strong></div>
+          <div><span>Booking type</span><strong>${b.booking_type==="instant"?"Instant Book":"Request to Book"}</strong></div>
+        </div>
+        ${b.status==="declined"?'<div class="notice" style="margin-top:14px">The guide was unable to accept this request. No payment has been taken.</div>':""}
+        ${b.payment_status==="paid"?'<div class="notice" style="margin-top:14px"><strong>Booking confirmed.</strong> Stripe has verified your payment.</div>':""}
+        ${b.booking_type==="request" && !b.accepted_at && b.status==="pending"?'<div class="notice" style="margin-top:14px">Your request is waiting for the guide to accept or decline it. No payment is due yet.</div>':""}
+        <div style="margin-top:16px">${action}</div>`;
+    } catch(err) {
+      console.error(err);
+      title.textContent="Booking status";
+      body.innerHTML=`<div class="notice">${err.message||"We couldn't load this booking."}</div>`;
+    }
+  }
+
+  async function loadGuideBookings(){
+    const container=document.querySelector("#guideBookingsContainer");
+    if(!container || !currentGuide) return;
+    container.innerHTML='<p style="color:var(--muted)">Loading bookings…</p>';
+    const {data,error}=await db.from("bookings")
+      .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,accepted_at,declined_at,created_at,listings(title)")
+      .eq("guide_id",currentGuide.id)
+      .order("booking_date",{ascending:true});
+    if(error){ console.error(error); container.innerHTML='<p style="color:var(--muted)">Bookings could not be loaded.</p>'; return; }
+    const rows=data||[];
+    if(!rows.length){ container.innerHTML='<p style="color:var(--muted)">No bookings yet.</p>'; return; }
+    const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
+    container.innerHTML=rows.map(b=>{
+      const title=b.listings?.title||"Guided trip";
+      const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"short",year:"numeric"}).format(new Date(b.booking_date+"T12:00:00"));
+      let state=b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
+      const actions=b.booking_type==="request" && b.status==="pending" && !b.accepted_at ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="primary guide-booking-decision" type="button" data-id="${b.id}" data-decision="accept">Accept request</button>
+          <button class="pill guide-booking-decision" type="button" data-id="${b.id}" data-decision="decline">Decline</button>
+        </div>` : "";
+      return `<div class="listing-item">
+        <strong>${title}</strong>
+        <p>${pretty} • ${b.guest_count} ${b.guest_count==1?"person":"people"} • ${money(b.total_amount_nzd)}</p>
+        <span class="status">${state}</span>
+        <p style="font-size:13px;color:var(--muted);margin-top:8px"><strong>${b.customer_name}</strong><br>${b.customer_email}${b.customer_phone?` • ${b.customer_phone}`:""}</p>
+        ${b.customer_message?`<div class="notice" style="margin-top:8px"><strong>Customer note:</strong> ${b.customer_message}</div>`:""}
+        ${actions}
+      </div>`;
+    }).join("");
+
+    container.querySelectorAll(".guide-booking-decision").forEach(btn=>btn.addEventListener("click",async()=>{
+      const decision=btn.dataset.decision;
+      const bookingId=btn.dataset.id;
+      const original=btn.textContent;
+      btn.disabled=true; btn.textContent=decision==="accept"?"Accepting…":"Declining…";
+      try{
+        const {data:{session}}=await db.auth.getSession();
+        if(!session?.access_token) throw new Error("Please log in again.");
+        const r=await fetch(`${SUPABASE_URL}/functions/v1/guide-booking-decision`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":`Bearer ${session.access_token}`},
+          body:JSON.stringify({booking_id:bookingId,decision})
+        });
+        const result=await r.json();
+        if(!r.ok) throw new Error(result.error||"The booking could not be updated.");
+        if(decision==="accept") alert("Request accepted. The customer's booking-status page now has a Stripe Pay now button.");
+        await loadGuideBookings();
+      }catch(err){ console.error(err); alert(err.message||"The booking could not be updated."); btn.disabled=false; btn.textContent=original; }
+    }));
+  }
+
   async function loadGuideDashboard(user) {
     const {data:guide,error}=await db.from("guides").select("*").eq("user_id",user.id).maybeSingle();
     if(error) throw error;
@@ -1530,6 +1674,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#loginBox").style.display="none";
     document.querySelector("#dashboard").classList.add("active");
     await loadGuideListings();
+    await loadGuideBookings();
   }
 
   document.querySelector("#loginForm")?.addEventListener("submit", async e => {

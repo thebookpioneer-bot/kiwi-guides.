@@ -212,7 +212,7 @@ textarea{min-height:105px;resize:vertical}
   <nav class="nav">
     <button class="navbtn active" data-page="home">Home</button>
     <button class="navbtn" data-page="explore">Explore</button>
-    <button class="navbtn" data-page="guides">For Guides</button><button class="navbtn" data-page="contact">Contact</button>
+    <button class="navbtn" data-page="guides">For Guides</button><button class="navbtn" data-page="contact">About Us</button>
     
   </nav>
 </header>
@@ -281,19 +281,33 @@ textarea{min-height:105px;resize:vertical}
 
 
 
+
 <section class="page" id="page-contact">
   <section class="hero" style="text-align:center">
-    <div class="eyebrow" style="color:#d5e1d8">CONTACT KIWI GUIDES</div>
-    <h1>How can we help?</h1>
-    <p>Have a question about a guided trip, booking, or becoming a Kiwi Guides guide? Send us an enquiry and we’ll get back to you as soon as we can.</p>
+    <div class="eyebrow" style="color:#d5e1d8">ABOUT KIWI GUIDES</div>
+    <h1>Connecting people with unforgettable guided experiences</h1>
+    <p>Kiwi Guides is a New Zealand marketplace designed to make it easier to discover and book trusted guided fishing, hunting and back country experiences across the country.</p>
+  </section>
+
+  <section class="section">
+    <div class="panel" style="max-width:900px;margin:auto">
+      <div class="eyebrow">ABOUT US</div>
+      <h2>What Kiwi Guides is about</h2>
+      <p style="color:var(--muted);line-height:1.75">
+        Kiwi Guides brings customers and independent guides together in one place. Customers can explore guided trips, compare experiences and book directly through the platform, while guides can showcase their services, availability and experience.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        Our goal is to help people experience more of New Zealand through knowledgeable local guides while giving guides a simple way to reach customers and manage bookings.
+      </p>
+    </div>
   </section>
 
   <section class="section">
     <div class="two-col" style="align-items:start">
       <div class="panel">
-        <div class="eyebrow">EMAIL US</div>
-        <h2>Get in touch</h2>
-        <p style="color:var(--muted);line-height:1.65">You can email Kiwi Guides directly at:</p>
+        <div class="eyebrow">CONTACT US</div>
+        <h2>How can we help?</h2>
+        <p style="color:var(--muted);line-height:1.65">Have a question about a guided trip, booking, or becoming a Kiwi Guides guide? You can email us directly at:</p>
         <p><a href="mailto:thebookpioneer@gmail.com" style="font-weight:900;color:var(--forest);font-size:18px">thebookpioneer@gmail.com</a></p>
         <p style="color:var(--muted);line-height:1.65">For booking questions, include the trip name and booking reference if you have one.</p>
       </div>
@@ -323,8 +337,32 @@ textarea{min-height:105px;resize:vertical}
           </label>
           <button class="primary" type="submit" style="width:100%">Email enquiry</button>
         </form>
-        <p style="color:var(--muted);font-size:12px;margin-top:12px">Tapping Email enquiry opens your email app with the message filled in and ready to send.</p>
       </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel" style="max-width:900px;margin:auto">
+      <div class="eyebrow">TERMS & CONDITIONS</div>
+      <h2>Using Kiwi Guides</h2>
+      <p style="color:var(--muted);line-height:1.75">
+        Kiwi Guides provides a marketplace that connects customers with independent guides and outdoor experience providers. Guides are responsible for the accuracy of their listings, availability, pricing, safety requirements, licences, permits and the delivery of their guided experience.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        Customers are responsible for providing accurate booking information, following the guide’s instructions, meeting any age, fitness, licence or equipment requirements, and advising the guide of any information that may affect participation in the experience.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        A booking is only confirmed once the applicable booking process has been completed. For Instant Book trips this includes successful payment. For Request to Book trips, the guide must first accept the request and any required payment must then be completed.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        Cancellation, refund, rescheduling and weather-related policies may vary between listings and should be reviewed before booking. Kiwi Guides may assist with booking support, but individual guides remain responsible for delivering the experience advertised.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        Outdoor activities such as hunting, fishing and back country travel carry inherent risks. Customers participate at their own risk and must follow all safety instructions provided by their guide.
+      </p>
+      <p style="color:var(--muted);line-height:1.75">
+        These terms are a general platform summary and may be updated as Kiwi Guides develops. A more detailed legal version should be reviewed before the app is publicly launched.
+      </p>
     </div>
   </section>
 </section>
@@ -568,7 +606,7 @@ textarea{min-height:105px;resize:vertical}
 <button class="bottom active" data-page="home">Home</button>
 <button class="bottom" data-page="explore">Explore</button>
 <button class="bottom" data-page="guides">For Guides</button>
-<button class="bottom" data-page="contact">Contact</button>
+<button class="bottom" data-page="contact">About Us</button>
 
 </nav>
 </div>
@@ -625,7 +663,7 @@ window.addEventListener("popstate",()=>{
   const id=(location.hash||"#home").slice(1);
   if($("#page-"+id)) showPage(id,false);
 });
-function card(t){return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${t.desc}</p><div class="chips">${t.features.map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick="openTrip(${t.id})">View guide</button></div></div></article>`}
+function card(t){return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${t.desc.length>125 ? t.desc.slice(0,125).trim()+"…" : t.desc}</p><div class="chips">${t.features.map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick="openTrip(${t.id})">View guide</button></div></div></article>`}
 $("#homeCards").innerHTML=trips.slice(0,3).map(card).join("");
 function renderExplore(){const q=$("#search").value.toLowerCase(),loc=$("#location").value,typ=$("#triptype").value;$("#exploreCards").innerHTML=trips.filter(t=>(!q||(`${t.title} ${t.location} ${t.type}`).toLowerCase().includes(q))&&(!loc||t.location===loc)&&(!typ||t.type===typ)).map(card).join("")}
 ["search","location","triptype"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",renderExplore)); renderExplore();

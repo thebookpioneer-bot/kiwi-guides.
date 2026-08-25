@@ -230,6 +230,16 @@ textarea{min-height:105px;resize:vertical}
 .customer-status{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf3ee;color:var(--forest);font-size:11px;font-weight:900}
 @media(max-width:700px){.customer-summary-grid{grid-template-columns:1fr}}
 
+
+.booking-policy-box{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fafbf9}
+.booking-policy-box h4{margin:0 0 7px;color:var(--forest)}
+.booking-policy-box p{margin:5px 0;color:var(--muted);font-size:13px;line-height:1.55}
+.booking-danger{border-color:#d9c7c2;background:#fffafa}
+.booking-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.booking-action-row input[type="date"]{max-width:190px}
+.refund-amount{font-weight:900;color:var(--forest)}
+.reschedule-offer{padding:12px;border-radius:12px;background:#f6f1e7;margin-top:12px}
+
 </style>
 </head>
 <body>
@@ -384,9 +394,15 @@ textarea{min-height:105px;resize:vertical}
       <p style="color:var(--muted);line-height:1.75">
         A booking is only confirmed once the applicable booking process has been completed. For Instant Book trips this includes successful payment. For Request to Book trips, the guide must first accept the request and any required payment must then be completed.
       </p>
-      <p style="color:var(--muted);line-height:1.75">
-        Cancellation, refund, rescheduling and weather-related policies may vary between listings and should be reviewed before booking. Kiwi Guides may assist with booking support, but individual guides remain responsible for delivering the experience advertised.
-      </p>
+      <div class="booking-policy-box" style="margin:18px 0">
+        <h3 style="margin-top:0">Cancellation, refunds & date changes</h3>
+        <p><strong>Customer cancellations:</strong> Cancellations made 30 days or more before the trip receive a 75% refund. Cancellations made 15–29 days before the trip receive a 50% refund. Cancellations made 14 days or less before the trip are not refundable.</p>
+        <p><strong>Date changes:</strong> A guide may choose to offer a different date instead of applying the cancellation policy. Date changes are at the guide’s discretion and must be accepted by the customer.</p>
+        <p><strong>No shows:</strong> If the customer does not attend the booked experience, no refund is provided.</p>
+        <p><strong>Weather, river, access or safety conditions:</strong> If the guide decides conditions are unsuitable or unsafe, the guide and customer may agree to move the booking to another suitable date, or the guide may approve a full refund.</p>
+        <p><strong>Guide cancellation:</strong> If the guide cancels the experience and a new date is not agreed, the customer receives a full refund.</p>
+        <p>Any rights that apply under New Zealand law continue to apply.</p>
+      </div>
       <p style="color:var(--muted);line-height:1.75">
         Outdoor activities such as hunting, fishing and back country travel carry inherent risks. Customers participate at their own risk and must follow all safety instructions provided by their guide.
       </p>
@@ -1794,6 +1810,38 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const {error}=await db.rpc("claim_my_customer_bookings");
     if(error) console.warn("Could not link older bookings:",error);
   }
+
+  function nzDateString(){
+    return new Intl.DateTimeFormat("en-CA",{timeZone:"Pacific/Auckland",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  }
+  function daysUntilBooking(dateStr){
+    const a=new Date(nzDateString()+"T00:00:00Z");
+    const b=new Date(dateStr+"T00:00:00Z");
+    return Math.floor((b-a)/86400000);
+  }
+  function customerRefundPercent(dateStr){
+    const days=daysUntilBooking(dateStr);
+    if(days>=30) return 75;
+    if(days>=15) return 50;
+    return 0;
+  }
+  async function manageBookingAction(payload){
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.access_token) throw new Error("Please log in again.");
+    const r=await fetch(`${SUPABASE_URL}/functions/v1/manage-booking`,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Authorization":`Bearer ${session.access_token}`
+      },
+      body:JSON.stringify(payload)
+    });
+    const result=await r.json();
+    if(!r.ok) throw new Error(result.error||"The booking could not be updated.");
+    return result;
+  }
+
   async function loadCustomerDashboard(){
     const {data:{user}}=await db.auth.getUser();
     currentCustomerUser=user||null;
@@ -1809,7 +1857,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     await claimCustomerBookings();
 
     const {data:bookings,error}=await db.from("bookings")
-      .select("id,guide_id,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,listings(title,location,region),guides(display_name,business_name,email,phone)")
+      .select("id,guide_id,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,stripe_refund_id,reschedule_status,proposed_booking_date,reschedule_reason,listings(title,location,region),guides(display_name,business_name,email,phone)")
       .eq("customer_user_id",user.id)
       .order("booking_date",{ascending:false});
 
@@ -1827,7 +1875,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       (reviews||[]).forEach(r=>reviewMap[r.booking_id]=r);
     }
 
-    const today=new Date().toISOString().slice(0,10);
+    const today=nzDateString();
     document.querySelector("#customerUpcomingCount").textContent=rows.filter(b=>b.booking_date>=today&&!["cancelled","declined"].includes(b.status)).length;
     document.querySelector("#customerPastCount").textContent=rows.filter(b=>b.booking_date<today).length;
     document.querySelector("#customerReviewCount").textContent=rows.filter(b=>reviewEligible(b)&&!reviewMap[b.id]).length;
@@ -1845,7 +1893,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       const loc=[b.listings?.location,b.listings?.region].filter(Boolean).join(", ");
       const review=reviewMap[b.id];
       let status=b.status;
-      if(b.payment_status==="paid"&&b.status==="confirmed") status="Confirmed & paid";
+      if(b.status==="cancelled"){
+        status=b.refund_amount_nzd>0?`Cancelled • ${customerMoney(b.refund_amount_nzd)} refund`:"Cancelled";
+      }else if(b.payment_status==="paid"&&b.status==="confirmed") status="Confirmed & paid";
+      else if(b.payment_status==="partially_refunded") status="Partially refunded";
+      else if(b.payment_status==="refunded") status="Refunded";
       else if(b.status==="pending"&&b.booking_type==="request") status="Awaiting guide response";
       else if(b.status==="pending") status="Payment pending";
 
@@ -1864,15 +1916,86 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         reviewHtml=`<div class="customer-review-box"><span style="color:var(--muted)">Reviews open on ${reviewUnlockText(b)}, 2 days after the trip.</span></div>`;
       }
 
+      let rescheduleHtml="";
+      if(b.reschedule_status==="offered"&&b.proposed_booking_date&&b.status!=="cancelled"){
+        rescheduleHtml=`<div class="reschedule-offer">
+          <strong>Your guide has offered a new date</strong>
+          <p style="margin:5px 0">Proposed date: <strong>${customerDateNZ(b.proposed_booking_date)}</strong></p>
+          ${b.reschedule_reason?`<p style="color:var(--muted);margin:4px 0">${b.reschedule_reason}</p>`:""}
+          <div class="booking-action-row">
+            <button class="primary customer-reschedule-response" type="button" data-id="${b.id}" data-accept="true">Accept new date</button>
+            <button class="pill customer-reschedule-response" type="button" data-id="${b.id}" data-accept="false">Decline</button>
+          </div>
+        </div>`;
+      }else if(b.reschedule_status==="accepted"){
+        rescheduleHtml=`<div class="notice" style="margin-top:10px"><strong>Date changed:</strong> your new booking date is ${customerDateNZ(b.booking_date)}.</div>`;
+      }else if(b.reschedule_status==="declined"){
+        rescheduleHtml=`<div class="notice" style="margin-top:10px">You declined the proposed date change. Contact your guide to discuss another option.</div>`;
+      }
+
+      let cancelHtml="";
+      if(!["cancelled","declined","completed"].includes(b.status) && daysUntilBooking(b.booking_date)>=0){
+        const pct=customerRefundPercent(b.booking_date);
+        const refund=Number(b.total_amount_nzd||0)*pct/100;
+        const days=daysUntilBooking(b.booking_date);
+        const wording=pct===75
+          ?`Because your trip is ${days} days away, cancelling now gives you a 75% refund of ${customerMoney(refund)}.`
+          :pct===50
+            ?`Because your trip is ${days} days away, cancelling now gives you a 50% refund of ${customerMoney(refund)}.`
+            :`Your trip is within 14 days, so cancelling now does not include a refund.`;
+        cancelHtml=`<div class="booking-policy-box booking-danger">
+          <h4>Need to cancel or change your date?</h4>
+          <p>${wording}</p>
+          <p>If you would prefer another date, contact ${guideName} first. The guide can choose to offer a date change.</p>
+          <div class="booking-action-row">
+            ${g.email?`<a class="pill" href="mailto:${g.email}?subject=${encodeURIComponent("Kiwi Guides date change request — "+trip)}">Ask guide about a date change</a>`:""}
+            <button class="pill customer-cancel-booking" type="button" data-id="${b.id}" data-refund="${refund.toFixed(2)}" data-percent="${pct}">Cancel booking</button>
+          </div>
+        </div>`;
+      }else if(b.status==="cancelled"){
+        cancelHtml=`<div class="booking-policy-box">
+          <h4>Booking cancelled</h4>
+          <p>${b.cancellation_reason||"This booking has been cancelled."}</p>
+          <p>${Number(b.refund_amount_nzd||0)>0?`Refund: <span class="refund-amount">${customerMoney(b.refund_amount_nzd)}</span>. Stripe refunds can take several business days to appear with your bank.`:"No refund was issued under the cancellation policy."}</p>
+        </div>`;
+      }
+
       return `<div class="customer-booking-card">
         <div class="customer-booking-head">
           <div><h3 style="margin:0 0 5px">${trip}</h3><div class="customer-booking-meta">${customerDateNZ(b.booking_date)}${loc?` • ${loc}`:""}<br>${b.guest_count} ${b.guest_count===1?"person":"people"} • ${customerMoney(b.total_amount_nzd)}</div></div>
           <span class="customer-status">${status}</span>
         </div>
         <div class="customer-guide-contact"><strong>${guideName}</strong><div style="color:var(--muted);margin:4px 0">Guide contact details</div>${g.email?`<div><a href="mailto:${g.email}">${g.email}</a></div>`:""}${g.phone?`<div><a href="tel:${g.phone}">${g.phone}</a></div>`:""}</div>
+        ${rescheduleHtml}
+        ${cancelHtml}
         ${reviewHtml}
       </div>`;
     }).join("");
+
+    container.querySelectorAll(".customer-cancel-booking").forEach(btn=>btn.addEventListener("click",async()=>{
+      const pct=Number(btn.dataset.percent||0), refund=Number(btn.dataset.refund||0);
+      const msg=pct>0
+        ?`Cancel this booking? Under the Kiwi Guides policy you will receive a ${pct}% refund (${customerMoney(refund)}). This cannot be undone.`
+        :"Cancel this booking? This booking is within 14 days, so no refund will be issued. This cannot be undone.";
+      if(!confirm(msg)) return;
+      const original=btn.textContent; btn.disabled=true; btn.textContent="Cancelling…";
+      try{
+        const result=await manageBookingAction({action:"customer_cancel",booking_id:btn.dataset.id});
+        alert(result.refund_amount_nzd>0?`Booking cancelled. A ${customerMoney(result.refund_amount_nzd)} refund has been submitted.`:"Booking cancelled. No refund applies under the cancellation policy.");
+        await loadCustomerDashboard();
+      }catch(err){alert(err.message||"The booking could not be cancelled.");btn.disabled=false;btn.textContent=original;}
+    }));
+
+    container.querySelectorAll(".customer-reschedule-response").forEach(btn=>btn.addEventListener("click",async()=>{
+      const accept=btn.dataset.accept==="true";
+      if(!confirm(accept?"Accept this new booking date?":"Decline this proposed date change?")) return;
+      const original=btn.textContent; btn.disabled=true; btn.textContent=accept?"Accepting…":"Declining…";
+      try{
+        await manageBookingAction({action:"respond_reschedule",booking_id:btn.dataset.id,accept});
+        alert(accept?"Your booking has been moved to the new date.":"The new date was declined. Your original booking date remains in place.");
+        await loadCustomerDashboard();
+      }catch(err){alert(err.message||"The date-change response could not be saved.");btn.disabled=false;btn.textContent=original;}
+    }));
 
     container.querySelectorAll(".star-btn").forEach(btn=>btn.addEventListener("click",()=>{
       const id=btn.dataset.booking, rating=Number(btn.dataset.rating);
@@ -1885,9 +2008,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       if(!rating){alert("Please choose a star rating first.");return;}
       const text=container.querySelector(`.customer-review-text[data-booking="${id}"]`)?.value.trim()||null;
       btn.disabled=true;btn.textContent="Submitting…";
-      const {error}=await db.from("guide_reviews").insert({
-        booking_id:id,guide_id:btn.dataset.guide,customer_user_id:user.id,rating,review_text:text
-      });
+      const {error}=await db.from("guide_reviews").insert({booking_id:id,guide_id:btn.dataset.guide,customer_user_id:user.id,rating,review_text:text});
       if(error){alert(error.message||"Review could not be submitted.");btn.disabled=false;btn.textContent="Submit review";return;}
       await loadCustomerDashboard();
     }));
@@ -1981,7 +2102,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     if(!container || !currentGuide) return;
     container.innerHTML='<p style="color:var(--muted)">Loading bookings…</p>';
     const {data,error}=await db.from("bookings")
-      .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,accepted_at,declined_at,created_at,listings(title)")
+      .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,accepted_at,declined_at,created_at,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,reschedule_status,proposed_booking_date,reschedule_reason,listings(title)")
       .eq("guide_id",currentGuide.id)
       .order("booking_date",{ascending:true});
     if(error){ console.error(error); container.innerHTML='<p style="color:var(--muted)">Bookings could not be loaded.</p>'; return; }
@@ -1990,27 +2111,56 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
     container.innerHTML=rows.map(b=>{
       const title=b.listings?.title||"Guided trip";
-      const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"short",year:"numeric"}).format(new Date(b.booking_date+"T12:00:00"));
-      let state=b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
-      const actions=b.booking_type==="request" && b.status==="pending" && !b.accepted_at ? `
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      const pretty=customerDateNZ(b.booking_date);
+      let state=b.status==="cancelled"?"CANCELLED":b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
+      const requestActions=b.booking_type==="request" && b.status==="pending" && !b.accepted_at ? `
+        <div class="booking-action-row">
           <button class="primary guide-booking-decision" type="button" data-id="${b.id}" data-decision="accept">Accept request</button>
           <button class="pill guide-booking-decision" type="button" data-id="${b.id}" data-decision="decline">Decline</button>
         </div>` : "";
+
+      let tripActions="";
+      if(b.status==="confirmed" && b.payment_status==="paid" && daysUntilBooking(b.booking_date)>=0){
+        tripActions=`<div class="booking-policy-box">
+          <h4>Manage this trip</h4>
+          <p>For unsuitable weather, river, access or safety conditions you can offer the customer another date or issue a full refund.</p>
+          <label style="margin-top:8px">Offer a new date
+            <input class="guide-new-date" data-id="${b.id}" type="date" min="${nzDateString()}">
+          </label>
+          <div class="booking-action-row">
+            <button class="primary guide-offer-reschedule" type="button" data-id="${b.id}">Offer new date</button>
+            <button class="pill guide-full-refund" type="button" data-id="${b.id}" data-reason="weather">Full refund — weather/conditions</button>
+            <button class="pill guide-full-refund" type="button" data-id="${b.id}" data-reason="guide">Cancel trip — full refund</button>
+          </div>
+        </div>`;
+      }
+
+      let reschedule="";
+      if(b.reschedule_status==="offered"&&b.proposed_booking_date){
+        reschedule=`<div class="notice" style="margin-top:10px"><strong>Date change offered:</strong> ${customerDateNZ(b.proposed_booking_date)} — waiting for customer response.</div>`;
+      }else if(b.reschedule_status==="accepted"){
+        reschedule=`<div class="notice" style="margin-top:10px"><strong>New date accepted:</strong> ${customerDateNZ(b.booking_date)}.</div>`;
+      }else if(b.reschedule_status==="declined"){
+        reschedule=`<div class="notice" style="margin-top:10px">Customer declined the proposed new date. Contact them to discuss another date or a refund if conditions prevent the trip.</div>`;
+      }
+
+      let cancellation="";
+      if(b.status==="cancelled"){
+        cancellation=`<div class="notice" style="margin-top:10px"><strong>Cancelled:</strong> ${b.cancellation_reason||""}${Number(b.refund_amount_nzd||0)>0?`<br>Refund: ${money(b.refund_amount_nzd)} (${Number(b.refund_percent||0)}%)`:"<br>No refund issued."}</div>`;
+      }
+
       return `<div class="listing-item">
         <strong>${title}</strong>
         <p>${pretty} • ${b.guest_count} ${b.guest_count==1?"person":"people"} • ${money(b.total_amount_nzd)}</p>
         <span class="status">${state}</span>
         <p style="font-size:13px;color:var(--muted);margin-top:8px"><strong>${b.customer_name}</strong><br>${b.customer_email}${b.customer_phone?` • ${b.customer_phone}`:""}</p>
         ${b.customer_message?`<div class="notice" style="margin-top:8px"><strong>Customer note:</strong> ${b.customer_message}</div>`:""}
-        ${actions}
+        ${reschedule}${cancellation}${requestActions}${tripActions}
       </div>`;
     }).join("");
 
     container.querySelectorAll(".guide-booking-decision").forEach(btn=>btn.addEventListener("click",async()=>{
-      const decision=btn.dataset.decision;
-      const bookingId=btn.dataset.id;
-      const original=btn.textContent;
+      const decision=btn.dataset.decision, bookingId=btn.dataset.id, original=btn.textContent;
       btn.disabled=true; btn.textContent=decision==="accept"?"Accepting…":"Declining…";
       try{
         const {data:{session}}=await db.auth.getSession();
@@ -2022,9 +2172,36 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         });
         const result=await r.json();
         if(!r.ok) throw new Error(result.error||"The booking could not be updated.");
-        if(decision==="accept") alert("Request accepted. The customer's booking-status page now has a Stripe Pay now button.");
+        if(decision==="accept") alert("Request accepted. The customer can now continue to payment.");
         await loadGuideBookings();
-      }catch(err){ console.error(err); alert(err.message||"The booking could not be updated."); btn.disabled=false; btn.textContent=original; }
+      }catch(err){ alert(err.message||"The booking could not be updated."); btn.disabled=false; btn.textContent=original; }
+    }));
+
+    container.querySelectorAll(".guide-offer-reschedule").forEach(btn=>btn.addEventListener("click",async()=>{
+      const input=container.querySelector(`.guide-new-date[data-id="${btn.dataset.id}"]`);
+      const proposed=input?.value;
+      if(!proposed){alert("Choose the new date you would like to offer first.");return;}
+      if(!confirm(`Offer ${customerDateNZ(proposed)} as the new trip date? The customer will need to accept it.`)) return;
+      const original=btn.textContent;btn.disabled=true;btn.textContent="Sending offer…";
+      try{
+        await manageBookingAction({action:"offer_reschedule",booking_id:btn.dataset.id,proposed_date:proposed,reason:"Weather, river, access, safety conditions or agreed date change"});
+        alert("New date offered. The customer can accept or decline it from My Trips.");
+        await loadGuideBookings();
+      }catch(err){alert(err.message||"The new date could not be offered.");btn.disabled=false;btn.textContent=original;}
+    }));
+
+    container.querySelectorAll(".guide-full-refund").forEach(btn=>btn.addEventListener("click",async()=>{
+      const weather=btn.dataset.reason==="weather";
+      const message=weather
+        ?"Issue a 100% refund and cancel this booking because conditions are unsuitable? This cannot be undone."
+        :"Cancel this trip and issue the customer a 100% refund? This cannot be undone.";
+      if(!confirm(message)) return;
+      const original=btn.textContent;btn.disabled=true;btn.textContent="Processing refund…";
+      try{
+        const result=await manageBookingAction({action:"guide_full_refund",booking_id:btn.dataset.id,reason:btn.dataset.reason});
+        alert(`Booking cancelled. A full refund of ${money(result.refund_amount_nzd)} has been submitted.`);
+        await loadGuideBookings();
+      }catch(err){alert(err.message||"The refund could not be processed.");btn.disabled=false;btn.textContent=original;}
     }));
   }
 

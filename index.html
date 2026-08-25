@@ -2086,101 +2086,86 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     </div>`;
   }
 
-  async function openApplicationReview(id){
-    try{
-      document.querySelector("#modalContent").innerHTML='<div class="eyebrow">GUIDE APPLICATION</div><h2>Loading full application…</h2>';
-      document.querySelector("#modal").classList.add("open");
+  async function openApplicationReview(id) {
+  try {
+    const applicationId = typeof id === "string"
+      ? id
+      : (id?.dataset?.id || id?.id || id?.application_id);
 
-      const [{data:app,error:appErr},{data:uploads,error:uploadErr}] = await Promise.all([
-        db.from("guide_applications").select("*").eq("id",id).single(),
-        db.from("guide_application_uploads").select("*").eq("application_id",id).order("created_at",{ascending:true})
-      ]);
-      if(appErr) throw appErr;
-      if(uploadErr) throw uploadErr;
+    if(!applicationId) throw new Error("Application ID is missing.");
 
-      const photoCards=[];
-      for(const upload of uploads||[]){
-        const {data:signed,error:signedErr}=await db.storage
+    const {data:app,error:appError} = await db
+      .from("guide_applications")
+      .select("*")
+      .eq("id",applicationId)
+      .single();
+
+    if(appError) throw appError;
+    if(!app) throw new Error("Application not found.");
+
+    const {data:uploads,error:uploadError} = await db
+      .from("guide_application_uploads")
+      .select("*")
+      .eq("application_id",applicationId)
+      .order("created_at",{ascending:true});
+
+    if(uploadError) console.warn("Application photos could not be loaded:", uploadError);
+
+    const photoCards = [];
+    for(const upload of (uploads || [])) {
+      try {
+        const {data:signed,error:signedError} = await db.storage
           .from("guide-application-uploads")
-          .createSignedUrl(upload.storage_path,3600);
-        if(!signedErr && signed?.signedUrl){
-          photoCards.push(`<a href="${signed.signedUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
-            <img src="${signed.signedUrl}" alt="${esc(upload.original_name)}" style="width:100%;height:170px;object-fit:cover;border-radius:14px;border:1px solid #d8e0da">
-            <div style="font-size:12px;margin-top:5px;color:var(--muted)">${esc(upload.original_name)}</div>
-          </a>`);
+          .createSignedUrl(upload.storage_path, 3600);
+        if(!signedError && signed?.signedUrl) {
+          photoCards.push(`<img src="${signed.signedUrl}" alt="Guide application photo" style="width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-top:10px">`);
         }
+      } catch(photoErr) {
+        console.warn(photoErr);
       }
-
-      const submitted = app.created_at
-        ? new Intl.DateTimeFormat("en-NZ",{dateStyle:"medium",timeStyle:"short"}).format(new Date(app.created_at))
-        : "Not available";
-
-      document.querySelector("#modalContent").innerHTML=`
-        <div class="eyebrow">FULL GUIDE APPLICATION</div>
-        <h2>${esc(app.guide_name)}</h2>
-        <p style="color:var(--muted)">Submitted ${esc(submitted)}. Review all details below before making a decision.</p>
-
-        <div class="panel" style="margin:18px 0">
-          <h3>Contact & business</h3>
-          ${reviewField("Guide name",app.guide_name)}
-          ${reviewField("Business name",app.business_name)}
-          ${reviewField("Email",app.email)}
-          ${reviewField("Phone",app.phone)}
-          ${reviewField("Primary region",app.primary_region)}
-          ${reviewField("Main activity",app.main_activity)}
-        </div>
-
-        <div class="panel" style="margin:18px 0">
-          <h3>Experience & guiding background</h3>
-          ${reviewField("Years guiding",app.years_guiding)}
-          ${reviewField("Guiding experience",app.experience)}
-          ${reviewField("Qualifications / licences",app.qualifications)}
-          ${reviewField("Regions and areas guided",app.areas_guided)}
-          ${reviewField("Types of trips",app.trip_types)}
-          ${reviewField("Group sizes",app.group_sizes)}
-          ${reviewField("Trip inclusions",app.inclusions)}
-          ${reviewField("Short guide bio",app.bio)}
-          ${reviewField("Why they want to join",app.why_join)}
-        </div>
-
-        <div class="panel" style="margin:18px 0">
-          <h3>Online presence</h3>
-          ${reviewField("Website",app.website)}
-          ${reviewField("Instagram",app.instagram)}
-          ${reviewField("Facebook",app.facebook)}
-          ${reviewField("TikTok",app.tiktok)}
-          ${reviewField("YouTube",app.youtube)}
-          ${reviewField("Other social link",app.other_social)}
-        </div>
-
-        <div class="panel" style="margin:18px 0">
-          <h3>Uploaded photos</h3>
-          ${photoCards.length
-            ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">${photoCards.join("")}</div>`
-            : '<p style="color:var(--muted)">No photos were uploaded with this application.</p>'}
-        </div>
-
-        <div class="notice" style="margin:18px 0"><strong>Decision:</strong> Approving activates the guide account. Declining keeps the guide off the public marketplace.</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="primary" type="button" id="approveFullApplication">Approve guide</button>
-          <button class="pill" type="button" id="declineFullApplication">Decline application</button>
-        </div>`;
-
-      document.querySelector("#approveFullApplication").addEventListener("click",async()=>{
-        if(!confirm(`Approve ${app.guide_name} as a Kiwi Guides guide?`)) return;
-        await reviewApplication(id,"approved");
-        document.querySelector("#modal").classList.remove("open");
-      });
-      document.querySelector("#declineFullApplication").addEventListener("click",async()=>{
-        if(!confirm(`Decline ${app.guide_name}'s application?`)) return;
-        await reviewApplication(id,"rejected");
-        document.querySelector("#modal").classList.remove("open");
-      });
-    }catch(err){
-      console.error(err);
-      document.querySelector("#modalContent").innerHTML='<div class="eyebrow">APPLICATION ERROR</div><h2>The full application could not be loaded.</h2><p>Please close this window and try again.</p>';
     }
+
+    const safe = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const row = (label,value) => value ? `<div style="padding:10px 0;border-bottom:1px solid #e5e7eb"><strong>${safe(label)}</strong><div style="margin-top:4px;color:var(--muted);white-space:pre-wrap">${safe(value)}</div></div>` : "";
+
+    document.querySelector("#modalContent").innerHTML = `
+      <div class="eyebrow">GUIDE APPLICATION</div>
+      <h2>${safe(app.guide_name || "Guide application")}</h2>
+      ${row("Business name",app.business_name)}
+      ${row("Email",app.email)}
+      ${row("Phone",app.phone)}
+      ${row("Primary region",app.primary_region)}
+      ${row("Main activity",app.main_activity)}
+      ${row("Years guiding",app.years_guiding)}
+      ${row("Experience",app.experience)}
+      ${row("Qualifications",app.qualifications)}
+      ${row("Areas guided",app.areas_guided)}
+      ${row("Trip types",app.trip_types)}
+      ${row("Group sizes",app.group_sizes)}
+      ${row("Inclusions",app.inclusions)}
+      ${row("Website",app.website)}
+      ${row("Instagram",app.instagram)}
+      ${row("Facebook",app.facebook)}
+      ${row("TikTok",app.tiktok)}
+      ${row("YouTube",app.youtube)}
+      ${row("Other social",app.other_social)}
+      ${row("Bio",app.bio)}
+      ${row("Why they want to join",app.why_join)}
+      ${photoCards.length ? `<div style="margin-top:16px"><strong>Application photos</strong>${photoCards.join("")}</div>` : ""}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+        <button class="primary" type="button" onclick="approveGuideApplication('${applicationId}')">Approve guide</button>
+        <button class="pill" type="button" onclick="declineGuideApplication('${applicationId}')">Decline</button>
+      </div>`;
+    document.querySelector("#modal").classList.add("open");
+  } catch(err) {
+    console.error("Owner application review error:", err);
+    document.querySelector("#modalContent").innerHTML = `
+      <div class="eyebrow">APPLICATION ERROR</div>
+      <h2>The full application could not be loaded.</h2>
+      <p>${String(err?.message || "Please close this window and try again.")}</p>`;
+    document.querySelector("#modal").classList.add("open");
   }
+}
 
   async function reviewApplication(id,status) {
     try {

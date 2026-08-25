@@ -385,19 +385,19 @@ textarea{min-height:105px;resize:vertical}
         <label>Last name<input id="lastName"></label>
       </div>
       <label>Email<input id="bookEmail" type="email"></label>
-      <label>Phone<input id="bookPhone"></label>
+      <label>Phone (optional)<input id="bookPhone" type="tel"></label>
       <label>Notes / request
         <textarea id="bookNotes" rows="5" placeholder="Ask the guide a question or add anything they should know about your booking."></textarea>
       </label>
       <p style="color:var(--muted);font-size:13px;margin-top:-6px">Optional — for example, experience level, accessibility needs, preferred meeting time, or a question for the guide.</p>
-      <button class="primary" type="button" id="toSummary">Review booking</button><p style="color:var(--muted);font-size:12px;text-align:center;margin-top:8px">You’ll review the details first. Instant Book then continues to secure payment.</p>
+      <button class="primary" type="button" id="toSummary" onclick="reviewBookingNow()">Review booking</button><p style="color:var(--muted);font-size:12px;text-align:center;margin-top:8px">You’ll review the details first. Instant Book then continues to secure payment.</p>
     </div>
     <div class="booking-step" id="bookStep3">
       <div class="eyebrow">STEP 3 OF 3</div>
       <h2>Review your booking</h2>
       <div class="summary" id="bookingSummary"></div>
       <div class="notice" id="bookingFinalNotice">This is a working app preview. No real payment will be taken.</div>
-      <button class="primary" type="button" id="confirmBooking">Continue</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="ghost" type="button" onclick="document.getElementById('bookStep3').style.display='none';document.getElementById('bookStep3').classList.remove('active');document.getElementById('bookStep2').style.display='block';document.getElementById('bookStep2').classList.add('active')">Back</button><button class="primary" type="button" id="confirmBooking">Continue</button></div>
     </div>
   </section>
 </section>
@@ -704,45 +704,66 @@ $("#toDetails").addEventListener("click",()=>{
   $("#bookStep2").classList.add("active");
 });
 
-$("#toSummary").addEventListener("click",()=>{
-  try {
-  const first=$("#firstName").value.trim();
-  const email=$("#bookEmail").value.trim();
-  const phone=$("#bookPhone").value.trim();
-  if(!first || !email || !phone){
-    alert("Please enter your name, email and phone number.");
-    return;
+
+
+function reviewBookingNow(){
+  try{
+    const first=(document.getElementById("firstName")?.value||"").trim();
+    const last=(document.getElementById("lastName")?.value||"").trim();
+    const email=(document.getElementById("bookEmail")?.value||"").trim();
+    const phone=(document.getElementById("bookPhone")?.value||"").trim();
+    const notes=(document.getElementById("bookNotes")?.value||"").trim();
+
+    if(!first){ alert("Please enter your first name."); return false; }
+    if(!email || !email.includes("@")){ alert("Please enter a valid email address."); return false; }
+    if(!selectedDate){ alert("Please choose a booking date."); return false; }
+
+    const t=trips.find(x=>String(x.id)===String(currentTripId));
+    if(!t){ alert("We couldn't find this trip. Please return to the listing and try again."); return false; }
+
+    if(t.priceOptions?.length && Number(t.price)<=0 && !currentPricingOptionId){
+      alert("Please choose the hunting or booking price that applies.");
+      return false;
+    }
+
+    const people=document.getElementById("bookingPeople")?.value || "1";
+    const selectedOption=t.priceOptions?.find(o=>String(o.id)===String(currentPricingOptionId));
+    const optionLabel=selectedOption ? (selectedOption.label || selectedOption.animal_name || "Selected price") : "";
+    const prettyDate=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"));
+    const total=new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(currentBookingPrice||t.price||0));
+
+    const escText=v=>String(v||"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]));
+
+    document.getElementById("bookingSummary").innerHTML=`
+      <div><span>Trip</span><strong>${escText(t.title)}</strong></div>
+      ${optionLabel?`<div><span>Price option</span><strong>${escText(optionLabel)}</strong></div>`:""}
+      <div><span>Date</span><strong>${escText(prettyDate)}</strong></div>
+      <div><span>Name</span><strong>${escText((first+" "+last).trim())}</strong></div>
+      <div><span>Email</span><strong>${escText(email)}</strong></div>
+      ${phone?`<div><span>Phone</span><strong>${escText(phone)}</strong></div>`:""}
+      <div><span>People</span><strong>${escText(people)}</strong></div>
+      <div><span>Booking type</span><strong>${currentRequestMode ? "Request to Book" : "Instant Book"}</strong></div>
+      ${notes?`<div><span>Notes / request</span><strong style="text-align:right;max-width:60%">${escText(notes)}</strong></div>`:""}
+      <div><span>Total</span><strong>${escText(total)}</strong></div>`;
+
+    updateFinalBookingAction(t);
+
+    document.querySelectorAll(".booking-step").forEach(el=>{
+      el.classList.remove("active");
+      el.style.display="none";
+    });
+    const step3=document.getElementById("bookStep3");
+    step3.classList.add("active");
+    step3.style.display="block";
+    step3.scrollIntoView({behavior:"smooth",block:"start"});
+    return false;
+  }catch(err){
+    console.error("Review booking failed",err);
+    alert("The booking review couldn't open. Please try again.");
+    return false;
   }
-  const t=trips.find(x=>String(x.id)===String(currentTripId));
-  if(!t) return;
-  if(t.priceOptions?.length && Number(t.price)<=0 && !currentPricingOptionId){
-    alert("Please choose the hunting or booking price that applies.");
-    return;
-  }
-  const people=$("#bookingPeople").value;
-  const selectedOption=t.priceOptions?.find(o=>String(o.id)===String(currentPricingOptionId));
-  let optionLabel="";
-  if(selectedOption){
-    optionLabel=selectedOption.label || selectedOption.animal_name || "Selected price";
-  }
-  $("#bookingSummary").innerHTML=`
-    <div><span>Trip</span><strong>${t.title}</strong></div>
-    ${optionLabel?`<div><span>Price option</span><strong>${optionLabel}</strong></div>`:""}
-    <div><span>Date</span><strong>${new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"))}</strong></div>
-    <div><span>People</span><strong>${people}</strong></div>
-    <div><span>Booking type</span><strong>${currentRequestMode ? "Request to Book" : "Instant Book"}</strong></div>
-    ${$("#bookNotes").value.trim()?`<div><span>Notes / request</span><strong style="text-align:right;max-width:60%">${$("#bookNotes").value.trim()}</strong></div>`:""}
-    <div><span>Total</span><strong>${new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(currentBookingPrice)}</strong></div>
-  `;
-  updateFinalBookingAction(t);
-  $$(".booking-step").forEach(x=>x.classList.remove("active"));
-  $("#bookStep3").classList.add("active");
-  window.scrollTo({top:0,behavior:"smooth"});
-  } catch(err) {
-    console.error("Review booking error:", err);
-    alert("We couldn't open the booking review. Please check your details and try again.");
-  }
-});
+}
+
 
 /* Live booking confirmation handler is attached below. */
 

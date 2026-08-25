@@ -2164,10 +2164,55 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       ${row("Why they want to join",app.why_join)}
       ${photoCards.length ? `<div style="margin-top:16px"><strong>Application photos</strong>${photoCards.join("")}</div>` : ""}
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-        <button class="primary" type="button" onclick="approveGuideApplication('${applicationId}')">Approve guide</button>
-        <button class="pill" type="button" onclick="declineGuideApplication('${applicationId}')">Decline</button>
+        <button class="primary" type="button" id="ownerApproveGuideBtn">Approve guide</button>
+        <button class="pill" type="button" id="ownerDeclineGuideBtn">Decline</button>
       </div>`;
     document.querySelector("#modal").classList.add("open");
+
+    const approveBtn=document.querySelector("#ownerApproveGuideBtn");
+    const declineBtn=document.querySelector("#ownerDeclineGuideBtn");
+
+    approveBtn?.addEventListener("click", async () => {
+      approveBtn.disabled=true;
+      declineBtn.disabled=true;
+      approveBtn.textContent="Approving…";
+      const success=await reviewApplication(applicationId,"approved");
+      if(success){
+        document.querySelector("#modalContent").innerHTML=`
+          <div class="eyebrow">GUIDE APPROVED</div>
+          <h2>${safe(app.guide_name || "Guide")} is now approved.</h2>
+          <p>The guide account is active and they can now log in and create listings for review.</p>
+          <button class="primary" type="button" id="closeApprovedGuideModal" style="width:100%;margin-top:12px">Close</button>`;
+        document.querySelector("#closeApprovedGuideModal")?.addEventListener("click",()=>{
+          document.querySelector("#modal").classList.remove("open");
+        });
+      }else{
+        approveBtn.disabled=false;
+        declineBtn.disabled=false;
+        approveBtn.textContent="Approve guide";
+      }
+    });
+
+    declineBtn?.addEventListener("click", async () => {
+      if(!confirm("Decline this guide application?")) return;
+      approveBtn.disabled=true;
+      declineBtn.disabled=true;
+      declineBtn.textContent="Declining…";
+      const success=await reviewApplication(applicationId,"rejected");
+      if(success){
+        document.querySelector("#modalContent").innerHTML=`
+          <div class="eyebrow">APPLICATION DECLINED</div>
+          <h2>The guide application has been declined.</h2>
+          <button class="primary" type="button" id="closeDeclinedGuideModal" style="width:100%;margin-top:12px">Close</button>`;
+        document.querySelector("#closeDeclinedGuideModal")?.addEventListener("click",()=>{
+          document.querySelector("#modal").classList.remove("open");
+        });
+      }else{
+        approveBtn.disabled=false;
+        declineBtn.disabled=false;
+        declineBtn.textContent="Decline";
+      }
+    });
   } catch(err) {
     console.error("Owner application review error:", err);
     document.querySelector("#modalContent").innerHTML = `
@@ -2215,9 +2260,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         }
       }
       await loadOwnerDashboard();
+      return true;
     } catch(err) {
-      console.error(err);
-      alert("That application could not be updated.");
+      console.error("Guide approval error:",err);
+      alert(err?.message ? `That application could not be updated: ${err.message}` : "That application could not be updated.");
+      return false;
     }
   }
 

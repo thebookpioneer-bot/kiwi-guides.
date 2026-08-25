@@ -623,6 +623,14 @@ let trips=[
 const demoTrips=trips.map(t=>({...t,isDemo:true}));
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
+function threeSentencePreview(text){
+  const clean=String(text||"").trim();
+  if(!clean) return "";
+  const parts=clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+  return parts.slice(0,3).join(" ").replace(/\s+/g," ").trim();
+}
+
+
 const PUBLIC_BLOCKED_PAGES = new Set(["owner"]);
 
 let currentTripId=1;
@@ -663,7 +671,7 @@ window.addEventListener("popstate",()=>{
   const id=(location.hash||"#home").slice(1);
   if($("#page-"+id)) showPage(id,false);
 });
-function card(t){return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${t.desc.length>125 ? t.desc.slice(0,125).trim()+"…" : t.desc}</p><div class="chips">${t.features.map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick="openTrip(${t.id})">View guide</button></div></div></article>`}
+function card(t){return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${threeSentencePreview(t.desc)}</p><div class="chips">${t.features.map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick="openTrip(${t.id})">View guide</button></div></div></article>`}
 $("#homeCards").innerHTML=trips.slice(0,3).map(card).join("");
 function renderExplore(){const q=$("#search").value.toLowerCase(),loc=$("#location").value,typ=$("#triptype").value;$("#exploreCards").innerHTML=trips.filter(t=>(!q||(`${t.title} ${t.location} ${t.type}`).toLowerCase().includes(q))&&(!loc||t.location===loc)&&(!typ||t.type===typ)).map(card).join("")}
 ["search","location","triptype"].forEach(id=>$("#"+id).addEventListener(id==="search"?"input":"change",renderExplore)); renderExplore();
@@ -675,7 +683,7 @@ function selectRegion(region){
   const ids=regionTrips[region]||[];
   $$(".region-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.regionButton===region));
   $("#mapResults").innerHTML=ids.length
-    ? `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>Trips in ${region}</h2>${ids.map(id=>{const t=trips.find(x=>x.id===id);return `<div class="trip-result"><strong>${t.title}</strong><p>${t.desc}</p><button class="primary" onclick="openTrip(${id})">View trip</button></div>`}).join("")}`
+    ? `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>Trips in ${region}</h2>${ids.map(id=>{const t=trips.find(x=>x.id===id);return `<div class="trip-result"><strong>${t.title}</strong><p>${threeSentencePreview(t.desc)}</p><button class="primary" onclick="openTrip(${id})">View trip</button></div>`}).join("")}`
     : `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>No trips listed yet</h2><p>More approved guides will appear here as they join.</p>`;
 }
 
@@ -1148,7 +1156,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       <div class="card-body">
         <div class="meta">${t.type?`<span>${t.type}</span>`:""}${t.mode?`<span>${t.mode}</span>`:""}</div>
         <h3>${t.title}</h3>
-        ${t.desc?`<p>${t.desc}</p>`:""}
+        ${t.desc?`<p>${threeSentencePreview(t.desc)}</p>`:""}
         <div class="chips">${(t.features||[]).filter(Boolean).map(x=>`<span class="chip">${x}</span>`).join("")}</div>
         <div class="card-foot">
           ${priceText?`<div class="price"><strong>${priceText}</strong></div>`:"<div></div>"}
@@ -1164,7 +1172,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     if(mapResultsEl) mapResultsEl.style.display = "";
     document.querySelectorAll(".region-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.regionButton===region));
     document.querySelector("#mapResults").innerHTML = matches.length
-      ? `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>Trips in ${region}</h2>${matches.map(t=>`<div class="trip-result"><strong>${t.title}</strong><p>${t.desc}</p><button class="primary" onclick='openTrip(${safeId(t.id)})'>View trip</button></div>`).join("")}`
+      ? `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>Trips in ${region}</h2>${matches.map(t=>`<div class="trip-result"><strong>${t.title}</strong><p>${threeSentencePreview(t.desc)}</p><button class="primary" onclick='openTrip(${safeId(t.id)})'>View trip</button></div>`).join("")}`
       : `<div class="eyebrow" style="color:#d6e2da">${region.toUpperCase()}</div><h2>No trips listed yet</h2><p>More approved guides will appear here as they join.</p>`;
   };
 

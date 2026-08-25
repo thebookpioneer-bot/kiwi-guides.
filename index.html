@@ -1481,13 +1481,21 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   window.addEventListener("load",()=>{ openBookingStatusFromHash(); });
   window.addEventListener("hashchange",()=>{ openBookingStatusFromHash(); });
 
+  let guideApplicationSubmitting=false;
   document.querySelector("#applyForm")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const submit=e.currentTarget.querySelector('button[type="submit"]');
+    if(guideApplicationSubmitting) return;
+    guideApplicationSubmitting=true;
+
+    const form=e.currentTarget;
+    const submit=form.querySelector('button[type="submit"]');
     submit.disabled=true;
     submit.textContent="Submitting...";
+
     const email=document.querySelector("#applyEmail").value.trim();
     const password=document.querySelector("#applyPassword").value;
+    let applicationSaved=false;
+
     try {
       const application = {
         guide_name:document.querySelector("#applyGuideName").value.trim(),
@@ -1508,10 +1516,13 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         website:document.querySelector("#applyWebsite").value.trim(),
         bio:document.querySelector("#applyBio").value.trim()
       };
-      const applicationId = crypto.randomUUID();
-      application.id = applicationId;
+
+      const applicationId=crypto.randomUUID();
+      application.id=applicationId;
+
       const {error:insertError}=await db.from("guide_applications").insert(application);
       if(insertError) throw insertError;
+      applicationSaved=true;
 
       const files=[...(document.querySelector("#applyPhotos")?.files||[])];
       for(const file of files){
@@ -1533,23 +1544,47 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         if(metaError) throw metaError;
       }
 
-      const {error:signupError}=await db.auth.signUp({
-        email,password,
-        options:{
-          data:{full_name:application.guide_name},
-          emailRedirectTo:`${window.location.origin}/#guides`
+      // Creating/confirming the login is deliberately separate from saving the application.
+      // A login problem must never make a successfully saved application look like it failed.
+      let loginNote="Your application is saved.";
+      try {
+        const {error:signupError}=await db.auth.signUp({
+          email,password,
+          options:{
+            data:{full_name:application.guide_name},
+            emailRedirectTo:`${window.location.origin}/#guides`
+          }
+        });
+        if(signupError){
+          loginNote="Your application is saved. This email may already have a Kiwi Guides login, so you can use your existing login details after the application is approved.";
+        }else{
+          loginNote="Your application is saved. Check your email if you are asked to confirm your new guide login.";
         }
-      });
-      const note = signupError
-        ? "Your application is saved. If you already have an account, use Guide log in. Otherwise contact Kiwi Guides if you need help activating your login."
-        : "Your application is saved. Check your email if Supabase asks you to confirm your new guide login.";
-      document.querySelector("#modalContent").innerHTML=`<div class="eyebrow">APPLICATION SUBMITTED</div><h2>Your application is pending review.</h2><p>${note}</p>`;
+      }catch(loginErr){
+        console.warn("Application saved; guide login setup needs attention:",loginErr);
+        loginNote="Your application is saved. Your login could not be set up automatically, but this will not affect the application review.";
+      }
+
+      document.querySelector("#modalContent").innerHTML=`
+        <div class="eyebrow">APPLICATION SUBMITTED</div>
+        <h2>Your application is pending review.</h2>
+        <p>${loginNote}</p>`;
       document.querySelector("#modal").classList.add("open");
-      e.currentTarget.reset();
+      form.reset();
+
     } catch(err) {
       console.error(err);
-      alert("Your application could not be saved. Please check your details and try again.");
+      if(applicationSaved){
+        document.querySelector("#modalContent").innerHTML=`
+          <div class="eyebrow">APPLICATION SAVED</div>
+          <h2>Your application is pending review.</h2>
+          <p>Your main application was saved successfully. One of the optional follow-up steps, such as a photo upload or login setup, needs attention, but you do not need to submit another application.</p>`;
+        document.querySelector("#modal").classList.add("open");
+      }else{
+        alert(err?.message ? `Your application could not be saved: ${err.message}` : "Your application could not be saved. Please check your details and try again.");
+      }
     } finally {
+      guideApplicationSubmitting=false;
       submit.disabled=false;
       submit.textContent="Submit for review";
     }

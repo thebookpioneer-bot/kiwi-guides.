@@ -267,6 +267,8 @@ textarea{min-height:105px;resize:vertical}
 .public-guide-gallery img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px}
 @media(max-width:850px){.guide-photo-grid,.public-guide-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+.kg-choice-section{margin:18px 0;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fbfcfa}.kg-choice-title{font-weight:800;font-size:15px;margin-bottom:4px}.kg-choice-help{font-size:12px;color:var(--muted);margin-bottom:10px}.kg-choice-grid{display:flex;gap:8px;flex-wrap:wrap}.kg-choice{border:1px solid #cfd6d0;background:#fff;border-radius:999px;padding:9px 12px;font-weight:650;font-size:13px;cursor:pointer}.kg-choice.active{background:#173e31;color:#fff;border-color:#173e31}.kg-listing-preview{margin-top:22px;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:#fff}.kg-listing-preview>.eyebrow{padding:14px 16px 8px}.kg-preview-photo{height:210px;background:linear-gradient(135deg,#e7ece7,#c9d6cc);display:flex;align-items:center;justify-content:center;color:#607067;position:relative;font-weight:700}.kg-heart{position:absolute;right:16px;top:14px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.75);display:grid;place-items:center;font-size:27px;color:#173e31}.kg-preview-body{padding:18px}.kg-preview-body h3{margin:0 0 12px;font-size:24px}.kg-preview-line{font-size:15px;margin:7px 0;line-height:1.35}.kg-preview-icons{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.kg-preview-icons span{border:1px solid #d2d8d3;border-radius:999px;padding:7px 10px;font-size:12px}.kg-preview-price-label{color:#9b7a22;font-size:13px;margin-top:10px}.kg-preview-price{font-size:34px;font-weight:900;line-height:1.05}.kg-preview-meta{margin-top:5px;font-size:14px}.price-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin:8px 0}.price-row label{margin:0}@media(max-width:620px){.price-row{grid-template-columns:1fr 1fr}.price-row .remove-price-row{grid-column:1/-1}.kg-preview-photo{height:180px}}
 </style>
 </head>
 <body>
@@ -2605,140 +2607,168 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       return;
     }
 
+    const choiceGroup=(title,id,items,help="")=>`<div class="kg-choice-section"><div class="kg-choice-title">${title}</div>${help?`<div class="kg-choice-help">${help}</div>`:""}<div class="kg-choice-grid" id="${id}">${items.map(v=>`<button class="kg-choice" type="button" data-value="${v}">${v}</button>`).join("")}</div></div>`;
+
     document.querySelector("#modalContent").innerHTML=`
       <div class="eyebrow">NEW LISTING</div>
       <h2>Create a guided trip</h2>
-      <p style="color:var(--muted)">Complete the details below. Your listing will be sent to Kiwi Guides for approval before it appears publicly.</p>
+      <p style="color:var(--muted)">Choose the options that best describe your trip. Customers will see the most useful details directly on the listing card.</p>
 
       <form id="newListingForm">
-        <label>Listing title
-          <input id="newListingTitle" required placeholder="e.g. Full Day Rotorua Trout Fishing">
-        </label>
+        <label>Listing title<input id="newListingTitle" required placeholder="e.g. Rotorua Backcountry Trout Adventure"></label>
 
         <div class="form-grid">
-          <label>Region
-            <input id="newListingRegion" required placeholder="e.g. Bay of Plenty">
-          </label>
-          <label>Location
-            <input id="newListingLocation" placeholder="e.g. Rotorua">
-          </label>
-
-          <label>Activity type
-            <select id="newListingActivity" required>
-              <option value="">Choose activity</option>
-              <option>Fly Fishing</option>
-              <option>Fishing</option>
-              <option>Hunting</option>
-              <option>Hunting & Fishing</option>
-              <option>Back Country Adventure</option>
-              <option>Other</option>
-            </select>
-          </label>
-
-          <label>Duration in hours
-            <input id="newListingDuration" type="number" min="0.5" step="0.5" placeholder="8">
-          </label>
-
-          <label>Trip price NZD
-            <input id="newListingPrice" type="number" min="1" step="1" required placeholder="e.g. 850">
-          </label>
-
-          <label>Standard booking size
-            <select id="newListingGuests">
-              <option value="1">1 person</option>
-              <option value="2">Up to 2 people</option>
-              <option value="3">Up to 3 people</option>
-              <option value="4">Up to 4 people</option>
-            </select>
-          </label>
+          <label>Region<input id="newListingRegion" required placeholder="e.g. Bay of Plenty"></label>
+          <label>Location<input id="newListingLocation" placeholder="e.g. Rotorua"></label>
+          <label>Activity type<select id="newListingActivity" required>
+            <option value="">Choose activity</option><option>Fly Fishing</option><option>Spin Fishing</option><option>Fishing</option><option>Hunting</option><option>Hunting & Fishing</option><option>Back Country Adventure</option><option>Helicopter Adventure</option><option>Other</option>
+          </select></label>
+          <label>Trip format<select id="newListingTripFormat"><option>Half Day</option><option selected>Full Day</option><option>Multi Day</option><option>Custom</option></select></label>
         </div>
 
-        <label style="display:flex;gap:10px;align-items:center;margin-top:10px">
-          <input id="newListingLargerGroups" type="checkbox" style="width:auto">
-          Larger group bookings available
-        </label>
+        ${choiceGroup("Species","kgSpecies",["Brown Trout","Rainbow Trout","Salmon","Red Stag","Fallow Deer","Sika Deer","Tahr","Chamois","Wild Pig","Wild Goat","Other"],"Select as many as apply.")}
+        ${choiceGroup("Fishing & hunting style","kgStyles",["River Fishing","Lake Fishing","Sight Fishing","Dry Fly","Nymphing","Spin Fishing","Stalking","Rifle Hunting","Bow Hunting","Mountain Hunting","Bush Hunting","Back Country"],"These appear as quick trip features for customers.")}
+        ${choiceGroup("Access & transport","kgAccess",["Walking","4WD","Boat","Jet Boat","Helicopter","Raft","Horseback","Airport Pickup"],"Select how customers access or travel during the trip.")}
+        ${choiceGroup("What's included","kgIncluded",["Guide","Fishing Equipment","Hunting Equipment","Meals","Snacks","Accommodation","Transport","Licences","Airport Pickup","Photos / Video"],"Choose everything included in the advertised price.")}
 
-        <label id="newListingLargerGroupDetailsWrap" style="display:none">
-          Larger group details / pricing
-          <textarea id="newListingLargerGroupDetails" placeholder="Describe larger group options and any extra pricing."></textarea>
-        </label>
+        <div class="kg-choice-section">
+          <div class="kg-choice-title">Trip length & season</div>
+          <div class="form-grid">
+            <label>Duration in hours<input id="newListingDuration" type="number" min="0.5" step="0.5" placeholder="8"></label>
+            <label>Number of days<input id="newListingDays" type="number" min="1" step="1" value="1"></label>
+            <label>Season starts<input id="newListingSeasonStart" type="date"></label>
+            <label>Season ends<input id="newListingSeasonEnd" type="date"></label>
+          </div>
+          <label style="display:flex;gap:10px;align-items:center;margin-top:8px"><input id="newListingYearRound" type="checkbox" style="width:auto"> Available year round</label>
+        </div>
 
-        <label>Guided experience description
-          <textarea id="newListingDescription" required rows="7" placeholder="Describe what the day looks like, the guiding experience, what customers can expect, what is included and anything they should know."></textarea>
-        </label>
+        <div class="kg-choice-section">
+          <div class="kg-choice-title">Group setup</div>
+          <div class="form-grid">
+            <label>Standard booking size<select id="newListingGuests">${[1,2,3,4,5,6].map(n=>`<option value="${n}">${n===1?"1 person":`Up to ${n} people`}</option>`).join("")}</select></label>
+            <label>Non-participating guests<select id="newListingExtraGuests"><option value="0">No guests</option><option value="1">1 guest</option><option value="2">Up to 2 guests</option><option value="3">Up to 3 guests</option><option value="4">Up to 4 guests</option></select></label>
+          </div>
+          <label style="display:flex;gap:10px;align-items:center;margin-top:8px"><input id="newListingLargerGroups" type="checkbox" style="width:auto"> Larger group bookings available</label>
+          <label id="newListingLargerGroupDetailsWrap" style="display:none">Larger group details / pricing<textarea id="newListingLargerGroupDetails" placeholder="e.g. Groups of 5–8 available by request."></textarea></label>
+        </div>
 
-        <label>Booking option
-          <select id="newListingMode">
-            <option value="instant">Instant Book</option>
-            <option value="request">Request to Book</option>
-            <option value="both" selected>Instant Book + Request to Book</option>
-          </select>
-        </label>
+        <div class="kg-choice-section">
+          <div class="kg-choice-title">Pricing</div>
+          <div class="form-grid">
+            <label>Price display<select id="newListingPriceType"><option value="from">Price from</option><option value="package">Package price</option><option value="per_person">Per person</option></select></label>
+            <label>Base trip price NZD<input id="newListingPrice" type="number" min="0" step="1" placeholder="e.g. 850"></label>
+          </div>
+          <div id="huntingPricingBuilder" style="display:none;margin-top:12px">
+            <div class="kg-choice-help">For hunting listings you can add separate prices for each specific species/animal.</div>
+            <div id="animalPriceRows"></div>
+            <button class="pill" type="button" id="addAnimalPrice">+ Add species price</button>
+          </div>
+        </div>
+
+        <label>Guided experience description<textarea id="newListingDescription" required rows="6" placeholder="Describe what the day looks like, what customers can expect, what they should bring and any important information."></textarea></label>
+
+        <div class="kg-choice-section">
+          <div class="kg-choice-title">Booking option</div>
+          <div class="kg-choice-grid" id="kgBookingMode">
+            <button class="kg-choice active" type="button" data-value="both">Instant Book + Request to Book</button>
+            <button class="kg-choice" type="button" data-value="instant">Instant Book</button>
+            <button class="kg-choice" type="button" data-value="request">Request to Book</button>
+          </div>
+        </div>
+
+        <div class="kg-listing-preview">
+          <div class="eyebrow">LIVE LISTING PREVIEW</div>
+          <div class="kg-preview-photo"><span>Guide photo carousel</span><span class="kg-heart">♡</span></div>
+          <div class="kg-preview-body">
+            <h3 id="kgPreviewTitle">Your listing title</h3>
+            <div class="kg-preview-line">⌖ <span id="kgPreviewLocation">Location, New Zealand</span></div>
+            <div class="kg-preview-line">◉ <span id="kgPreviewSpecies">Species will appear here</span></div>
+            <div class="kg-preview-line">◎ <span id="kgPreviewStyles">Trip styles will appear here</span></div>
+            <div class="kg-preview-line">▣ <span id="kgPreviewSeason">Season / year round</span></div>
+            <div class="kg-preview-icons" id="kgPreviewAccess"></div>
+            <div class="kg-preview-price-label" id="kgPreviewPriceLabel">Price from</div>
+            <div class="kg-preview-price" id="kgPreviewPrice">$0</div>
+            <div class="kg-preview-meta" id="kgPreviewMeta">Full day • 1 person</div>
+          </div>
+        </div>
 
         <button class="primary" type="submit" style="width:100%;margin-top:18px">Submit for review</button>
       </form>`;
 
     document.querySelector("#modal").classList.add("open");
 
+    const activity=document.querySelector("#newListingActivity");
     const larger=document.querySelector("#newListingLargerGroups");
-    const largerWrap=document.querySelector("#newListingLargerGroupDetailsWrap");
-    larger?.addEventListener("change",()=>{
-      largerWrap.style.display=larger.checked?"":"none";
+    const huntingBox=document.querySelector("#huntingPricingBuilder");
+    const selected={species:[],styles:[],access:[],included:[],booking:"both"};
+    const setupChoiceGroup=(selector,key,single=false)=>{
+      document.querySelectorAll(`${selector} .kg-choice`).forEach(btn=>btn.addEventListener("click",()=>{
+        if(single){ document.querySelectorAll(`${selector} .kg-choice`).forEach(b=>b.classList.remove("active")); btn.classList.add("active"); selected[key]=btn.dataset.value; }
+        else { btn.classList.toggle("active"); selected[key]=[...document.querySelectorAll(`${selector} .kg-choice.active`)].map(b=>b.dataset.value); }
+        updatePreview();
+      }));
+    };
+    setupChoiceGroup("#kgSpecies","species"); setupChoiceGroup("#kgStyles","styles"); setupChoiceGroup("#kgAccess","access"); setupChoiceGroup("#kgIncluded","included"); setupChoiceGroup("#kgBookingMode","booking",true);
+
+    larger.addEventListener("change",()=>{document.querySelector("#newListingLargerGroupDetailsWrap").style.display=larger.checked?"":"none";updatePreview();});
+    activity.addEventListener("change",()=>{huntingBox.style.display=activity.value.toLowerCase().includes("hunting")?"":"none";updatePreview();});
+    document.querySelector("#newListingYearRound").addEventListener("change",e=>{
+      document.querySelector("#newListingSeasonStart").disabled=e.target.checked; document.querySelector("#newListingSeasonEnd").disabled=e.target.checked; updatePreview();
     });
+
+    function addAnimalRow(){
+      const wrap=document.createElement("div"); wrap.className="price-row";
+      wrap.innerHTML=`<label>Specific species<input class="animal-name" placeholder="e.g. Red stag"></label><label>Price NZD<input class="animal-price" type="number" min="0" step="1"></label><button class="pill remove-price-row" type="button">Remove</button>`;
+      wrap.querySelector(".remove-price-row").addEventListener("click",()=>wrap.remove());
+      document.querySelector("#animalPriceRows").appendChild(wrap);
+    }
+    document.querySelector("#addAnimalPrice").addEventListener("click",addAnimalRow);
+
+    function updatePreview(){
+      const title=document.querySelector("#newListingTitle").value.trim()||"Your listing title";
+      const loc=document.querySelector("#newListingLocation").value.trim()||document.querySelector("#newListingRegion").value.trim()||"Location";
+      const yr=document.querySelector("#newListingYearRound").checked;
+      const ss=document.querySelector("#newListingSeasonStart").value, se=document.querySelector("#newListingSeasonEnd").value;
+      const price=Number(document.querySelector("#newListingPrice").value||0);
+      const pt=document.querySelector("#newListingPriceType").value;
+      const days=Number(document.querySelector("#newListingDays").value||1), fmt=document.querySelector("#newListingTripFormat").value;
+      const guests=Number(document.querySelector("#newListingGuests").value||1), extras=Number(document.querySelector("#newListingExtraGuests").value||0);
+      document.querySelector("#kgPreviewTitle").textContent=title;
+      document.querySelector("#kgPreviewLocation").textContent=`${loc}, New Zealand`;
+      document.querySelector("#kgPreviewSpecies").textContent=selected.species.length?selected.species.join(", "):"Species will appear here";
+      document.querySelector("#kgPreviewStyles").textContent=selected.styles.length?selected.styles.slice(0,4).join(", "):"Trip styles will appear here";
+      document.querySelector("#kgPreviewSeason").textContent=yr?"Season: Year round":(ss&&se?`Season: ${ss} – ${se}`:"Season / year round");
+      document.querySelector("#kgPreviewAccess").innerHTML=selected.access.map(x=>`<span title="${x}">${x}</span>`).join("");
+      document.querySelector("#kgPreviewPriceLabel").textContent=pt==="package"?"Package price":pt==="per_person"?"Price per person":"Price from";
+      document.querySelector("#kgPreviewPrice").textContent=price?`$${price.toLocaleString("en-NZ")}`:"$0";
+      document.querySelector("#kgPreviewMeta").textContent=`${days>1?`${days} days`:fmt} • ${guests} ${guests===1?"person":"people"}${extras?` • ${extras} guest${extras===1?"":"s"}`:""}`;
+    }
+    ["#newListingTitle","#newListingRegion","#newListingLocation","#newListingTripFormat","#newListingDays","#newListingSeasonStart","#newListingSeasonEnd","#newListingPriceType","#newListingPrice","#newListingGuests","#newListingExtraGuests","#newListingDuration"].forEach(sel=>document.querySelector(sel)?.addEventListener("input",updatePreview));
+    updatePreview();
 
     document.querySelector("#newListingForm")?.addEventListener("submit",async e=>{
       e.preventDefault();
-      const submit=e.currentTarget.querySelector('button[type="submit"]');
-      submit.disabled=true;
-      submit.textContent="Submitting…";
-
+      const submit=e.currentTarget.querySelector('button[type="submit"]'); submit.disabled=true; submit.textContent="Submitting…";
       try{
         if(!currentGuide) throw new Error("Your guide session has expired. Please log in again.");
-
+        const animalRows=[...document.querySelectorAll("#animalPriceRows .price-row")].map((row,index)=>({option_type:"animal",animal_name:row.querySelector(".animal-name").value.trim(),price_nzd:Number(row.querySelector(".animal-price").value||0),sort_order:index})).filter(x=>x.animal_name);
         const price=Number(document.querySelector("#newListingPrice").value||0);
-        if(price<=0) throw new Error("Please enter a trip price.");
-
-        const listingId=crypto.randomUUID();
-        const description=document.querySelector("#newListingDescription").value.trim();
-
-        const {error}=await db.from("listings").insert({
-          id:listingId,
-          guide_id:currentGuide.id,
-          title:document.querySelector("#newListingTitle").value.trim(),
-          region:document.querySelector("#newListingRegion").value.trim(),
-          location:document.querySelector("#newListingLocation").value.trim() || null,
-          activity_type:document.querySelector("#newListingActivity").value,
-          duration_hours:document.querySelector("#newListingDuration").value ? Number(document.querySelector("#newListingDuration").value) : null,
-          price_nzd:price,
-          max_guests:Number(document.querySelector("#newListingGuests").value||1),
-          larger_groups_available:larger.checked,
-          larger_group_details:larger.checked ? (document.querySelector("#newListingLargerGroupDetails").value.trim()||null) : null,
-          short_description:description,
-          description,
-          booking_mode:document.querySelector("#newListingMode").value,
-          status:"pending"
-        });
-
+        if(price<=0 && !animalRows.length) throw new Error("Please enter a base trip price or at least one hunting species price.");
+        const listingId=crypto.randomUUID(), description=document.querySelector("#newListingDescription").value.trim();
+        const optionSummary=[
+          selected.species.length?`Species: ${selected.species.join(", ")}`:"",
+          selected.styles.length?`Styles: ${selected.styles.join(", ")}`:"",
+          selected.access.length?`Access: ${selected.access.join(", ")}`:"",
+          selected.included.length?`Included: ${selected.included.join(", ")}`:"",
+          document.querySelector("#newListingYearRound").checked?"Season: Year round":((document.querySelector("#newListingSeasonStart").value&&document.querySelector("#newListingSeasonEnd").value)?`Season: ${document.querySelector("#newListingSeasonStart").value} to ${document.querySelector("#newListingSeasonEnd").value}`:"")
+        ].filter(Boolean).join("\n");
+        const {error}=await db.from("listings").insert({id:listingId,guide_id:currentGuide.id,title:document.querySelector("#newListingTitle").value.trim(),region:document.querySelector("#newListingRegion").value.trim(),location:document.querySelector("#newListingLocation").value.trim()||null,activity_type:activity.value,duration_hours:document.querySelector("#newListingDuration").value?Number(document.querySelector("#newListingDuration").value):null,price_nzd:price,max_guests:Number(document.querySelector("#newListingGuests").value||1),larger_groups_available:larger.checked,larger_group_details:larger.checked?(document.querySelector("#newListingLargerGroupDetails").value.trim()||null):null,short_description:description+(optionSummary?`\n\n${optionSummary}`:""),description:description+(optionSummary?`\n\n${optionSummary}`:""),booking_mode:selected.booking,status:"pending"});
         if(error) throw error;
-
-        document.querySelector("#modalContent").innerHTML=`
-          <div class="eyebrow">LISTING SUBMITTED</div>
-          <h2>Your listing is pending review.</h2>
-          <p>Kiwi Guides will review it before it appears publicly.</p>
-          <button class="primary" type="button" id="closeNewListingSuccess" style="width:100%;margin-top:12px">Close</button>`;
-
-        document.querySelector("#closeNewListingSuccess")?.addEventListener("click",()=>{
-          document.querySelector("#modal").classList.remove("open");
-        });
-
-        await loadGuideListings();
-        try { await refreshGuideDashboardStats(); } catch(e) { console.warn(e); }
-      }catch(err){
-        console.error("New listing error:",err);
-        alert(err?.message || "The listing could not be saved.");
-        submit.disabled=false;
-        submit.textContent="Submit for review";
-      }
+        if(animalRows.length){const {error:priceError}=await db.from("listing_price_options").insert(animalRows.map(x=>({...x,listing_id:listingId})));if(priceError) throw priceError;}
+        document.querySelector("#modalContent").innerHTML=`<div class="eyebrow">LISTING SUBMITTED</div><h2>Your listing is pending review.</h2><p>Kiwi Guides will review it before it appears publicly.</p><button class="primary" type="button" id="closeNewListingSuccess" style="width:100%;margin-top:12px">Close</button>`;
+        document.querySelector("#closeNewListingSuccess")?.addEventListener("click",()=>document.querySelector("#modal").classList.remove("open"));
+        await loadGuideListings(); try{await refreshGuideDashboardStats();}catch(e){console.warn(e)}
+      }catch(err){console.error("New listing error:",err);alert(err?.message||"The listing could not be saved.");submit.disabled=false;submit.textContent="Submit for review";}
     });
   }
 

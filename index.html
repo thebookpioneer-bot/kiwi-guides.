@@ -224,6 +224,8 @@ textarea{min-height:105px;resize:vertical}
 .guide-payout-strip{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#edf5ef;border-radius:12px;padding:11px 12px;margin-top:10px}.guide-payout-strip span{font-size:12px;color:#50705c}.guide-payout-strip strong{color:var(--forest)}
 .guide-customer-note{margin-top:10px;padding:11px 12px;background:#fffaf1;border:1px solid #f0e1c6;border-radius:12px;font-size:13px;line-height:1.5}.guide-booking-empty{padding:28px 18px;text-align:center;border:1px dashed #d5dfd8;border-radius:16px;color:var(--muted);background:#fbfcfb}
 @media(max-width:700px){.guide-booking-kpis{grid-template-columns:1fr}.guide-booking-info-grid{grid-template-columns:1fr 1fr}.guide-booking-card{padding:14px}.guide-booking-hero{padding:18px}.guide-booking-title{font-size:17px}}
+.guide-past-cta{margin-top:18px;border:1px solid #dfe7e1;border-radius:18px;padding:18px;background:linear-gradient(135deg,#f7faf8,#eef4f0);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.guide-past-cta h4{margin:0 0 5px;color:var(--forest);font-size:19px}.guide-past-cta p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}.guide-past-search{display:grid;grid-template-columns:minmax(220px,1fr) minmax(170px,220px);gap:10px;margin:16px 0}.guide-past-search label{margin:0}.guide-past-table-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 10px}.guide-past-count{font-size:12px;color:var(--muted);font-weight:800}.guide-past-card{border:1px solid #e0e7e2;border-radius:16px;padding:15px;margin-bottom:10px;background:#fff}.guide-past-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.guide-past-card h4{margin:0 0 3px;color:var(--forest)}.guide-past-meta{font-size:13px;color:var(--muted);line-height:1.55}.guide-paid-stamp{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;background:#e8f5ed;color:#276744;font-size:11px;font-weight:900}.guide-past-empty{padding:30px 18px;text-align:center;border:1px dashed #d5dfd8;border-radius:16px;color:var(--muted);background:#fbfcfb}
+@media(max-width:700px){.guide-past-search{grid-template-columns:1fr}.guide-past-cta{align-items:stretch}.guide-past-cta .darkbtn{width:100%}}
 
 @media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-dashboard-nav{position:static;display:flex;overflow-x:auto;gap:8px;padding-bottom:4px}.guide-tab-btn{white-space:nowrap;text-align:center}.guide-quick-grid{grid-template-columns:1fr}}
 
@@ -725,9 +727,15 @@ textarea{min-height:105px;resize:vertical}
               <button class="guide-booking-filter active" type="button" data-booking-filter="all">All</button>
               <button class="guide-booking-filter" type="button" data-booking-filter="pending">Needs action</button>
               <button class="guide-booking-filter" type="button" data-booking-filter="upcoming">Upcoming</button>
-              <button class="guide-booking-filter" type="button" data-booking-filter="past">Past</button>
             </div>
             <div id="guideBookingsContainer"><p style="color:var(--muted)">Loading bookings…</p></div>
+            <div class="guide-past-cta">
+              <div>
+                <h4>Past Bookings</h4>
+                <p>Completed bookings move here once Kiwi Guides has marked your guide payout as paid.</p>
+              </div>
+              <button class="darkbtn" type="button" id="openGuidePastBookings">View past bookings</button>
+            </div>
           </div>
         </section>
 
@@ -851,6 +859,23 @@ textarea{min-height:105px;resize:vertical}
 </main>
 
 <nav class="bottom-nav">
+<section class="page" id="page-guide-past-bookings">
+  <div class="routebar"><button type="button" id="backToGuideBookings">← Back to bookings</button><span>/</span><span>Past Bookings</span></div>
+  <section class="section">
+    <div class="panel" style="max-width:980px;margin:auto">
+      <div class="eyebrow">GUIDE HISTORY</div>
+      <h2 style="margin:4px 0 6px">Past Bookings</h2>
+      <p style="color:var(--muted);margin-top:0">Your completed bookings appear here after Kiwi Guides has marked your guide payout as paid.</p>
+      <div class="guide-past-search">
+        <label>Search customer name<input id="guidePastNameSearch" type="search" placeholder="e.g. Sarah Williams"></label>
+        <label>Search by trip date<input id="guidePastDateSearch" type="date"></label>
+      </div>
+      <div class="guide-past-table-head"><strong>Booking history</strong><span class="guide-past-count" id="guidePastBookingCount">0 bookings</span></div>
+      <div id="guidePastBookingsContainer"><p style="color:var(--muted)">Loading past bookings…</p></div>
+    </div>
+  </section>
+</section>
+
 <button class="bottom active" data-page="home">Home</button>
 <button class="bottom" data-page="explore">Explore</button>
 <button class="bottom" data-page="customer">My Trips</button>
@@ -2135,6 +2160,43 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     }
   }
 
+  let guidePastBookingRows=[];
+  function renderGuidePastBookings(){
+    const container=document.querySelector("#guidePastBookingsContainer");
+    if(!container) return;
+    const nameQ=(document.querySelector("#guidePastNameSearch")?.value||"").trim().toLowerCase();
+    const dateQ=document.querySelector("#guidePastDateSearch")?.value||"";
+    const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
+    const clean=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const filtered=guidePastBookingRows.filter(b=>(!nameQ||String(b.customer_name||"").toLowerCase().includes(nameQ))&&(!dateQ||b.booking_date===dateQ));
+    const count=document.querySelector("#guidePastBookingCount");
+    if(count) count.textContent=`${filtered.length} ${filtered.length===1?"booking":"bookings"}`;
+    if(!filtered.length){container.innerHTML='<div class="guide-past-empty">No past bookings match your search.</div>';return;}
+    container.innerHTML=filtered.map(b=>`<article class="guide-past-card">
+      <div class="guide-past-card-top">
+        <div><h4>${clean(b.customer_name||"Customer")}</h4><div class="guide-past-meta">${clean(b.listings?.title||"Guided trip")} · ${customerDateNZ(b.booking_date)}<br>${Number(b.guest_count||0)} ${Number(b.guest_count||0)===1?"guest":"guests"} · Booking total ${money(b.total_amount_nzd)}</div></div>
+        <span class="guide-paid-stamp">GUIDE PAID</span>
+      </div>
+      <div class="guide-payout-strip" style="margin-top:12px"><span>Guide payout</span><strong>${money(b.guide_payout_nzd)}</strong></div>
+      <div class="guide-past-meta" style="margin-top:10px">${b.customer_email?`Email: ${clean(b.customer_email)}`:""}${b.customer_phone?`${b.customer_email?" · ":""}Phone: ${clean(b.customer_phone)}`:""}${b.guide_paid_at?`<br>Marked paid: ${new Date(b.guide_paid_at).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"})}`:""}</div>
+    </article>`).join("");
+  }
+  async function loadGuidePastBookings(){
+    const container=document.querySelector("#guidePastBookingsContainer");
+    if(!container||!currentGuide) return;
+    container.innerHTML='<p style="color:var(--muted)">Loading past bookings…</p>';
+    const today=nzDateString();
+    const {data,error}=await db.from("bookings")
+      .select("id,customer_name,customer_email,customer_phone,booking_date,guest_count,total_amount_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,listings(title)")
+      .eq("guide_id",currentGuide.id)
+      .eq("guide_payout_status","paid")
+      .lt("booking_date",today)
+      .order("booking_date",{ascending:false});
+    if(error){console.error(error);container.innerHTML='<div class="guide-past-empty">Past bookings could not be loaded right now.</div>';return;}
+    guidePastBookingRows=data||[];
+    renderGuidePastBookings();
+  }
+
   let activeGuideBookingFilter="all";
   async function loadGuideBookings(){
     const container=document.querySelector("#guideBookingsContainer");
@@ -2145,10 +2207,12 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       .eq("guide_id",currentGuide.id)
       .order("booking_date",{ascending:true});
     if(error){ console.error(error); container.innerHTML='<div class="guide-booking-empty">Bookings could not be loaded right now.</div>'; return; }
-    const rows=data||[];
+    const allRows=data||[];
+    const today=nzDateString();
+    const isArchivedPaid=b=>b.guide_payout_status==="paid" && b.booking_date<today;
+    const rows=allRows.filter(b=>!isArchivedPaid(b));
     const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
     const clean=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-    const today=nzDateString();
     const isPending=b=>b.booking_type==="request"&&b.status==="pending"&&!b.accepted_at;
     const isUpcoming=b=>b.status==="confirmed"&&b.payment_status==="paid"&&b.booking_date>=today;
     const isPast=b=>b.booking_date<today && !isPending(b);
@@ -3233,6 +3297,21 @@ window.addEventListener("hashchange", () => {
     try { setPage("payment-success"); } catch(e) { console.error(e); }
   }
 });
+
+  const openPastBtn=document.querySelector("#openGuidePastBookings");
+  if(openPastBtn) openPastBtn.addEventListener("click",async()=>{
+    showPage("guide-past-bookings",true);
+    await loadGuidePastBookings();
+  });
+  const backPastBtn=document.querySelector("#backToGuideBookings");
+  if(backPastBtn) backPastBtn.addEventListener("click",()=>{
+    showPage("guides",true);
+    setTimeout(()=>{document.querySelector('[data-guide-tab="bookings"]')?.click();},0);
+  });
+  const pastName=document.querySelector("#guidePastNameSearch");
+  const pastDate=document.querySelector("#guidePastDateSearch");
+  if(pastName) pastName.addEventListener("input",renderGuidePastBookings);
+  if(pastDate) pastDate.addEventListener("change",renderGuidePastBookings);
 </script>
 
 </body>

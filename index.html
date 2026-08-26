@@ -525,6 +525,11 @@ textarea{min-height:105px;resize:vertical}
       <div class="eyebrow">STEP 3 OF 3</div>
       <h2>Review your booking</h2>
       <div class="summary" id="bookingSummary"></div>
+      <div class="booking-policy-box" id="paymentPlanBox" style="margin-top:14px">
+        <h4>How would you like to pay?</h4>
+        <div id="paymentPlanChoices"></div>
+        <p id="paymentPlanHelp"></p>
+      </div>
       <div class="notice" id="bookingFinalNotice">This is a working app preview. No real payment will be taken.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="ghost" type="button" onclick="document.getElementById('bookStep3').style.display='none';document.getElementById('bookStep3').classList.remove('active');document.getElementById('bookStep2').style.display='block';document.getElementById('bookStep2').classList.add('active')">Back</button><button class="primary" type="button" id="confirmBooking">Continue</button></div>
     </div>
@@ -939,6 +944,7 @@ let selectedDate="";
 let currentRequestMode=false;
 let currentBookingPrice=0;
 let currentPricingOptionId=null;
+let currentPaymentPlan="full";
 let routeHistory=["home"];
 
 function showPage(id, push=true){
@@ -1028,6 +1034,7 @@ function startBooking(id, requestMode){
   currentTripId=id;
   const t=trips.find(x=>x.id===id);
   selectedDate="";
+  currentPaymentPlan="full";
   bookingCalendarDate=new Date(2026,8,1);
   $("#bookingTripName").textContent=t.title+(requestMode?" • Request to Book":"");
   renderBookingCalendar();
@@ -1055,6 +1062,43 @@ $("#toDetails").addEventListener("click",()=>{
 });
 
 
+
+function bookingBalanceDueDate(dateStr){
+  const d=new Date(dateStr+"T12:00:00");
+  d.setDate(d.getDate()-30);
+  return d;
+}
+function renderPaymentPlanChoice(){
+  const choices=document.getElementById("paymentPlanChoices");
+  const help=document.getElementById("paymentPlanHelp");
+  if(!choices||!help||!selectedDate) return;
+  const amount=Number(currentBookingPrice||0);
+  const deposit=Math.round(amount*20)/100;
+  const balance=Math.round((amount-deposit)*100)/100;
+  const due=bookingBalanceDueDate(selectedDate);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const depositAllowed=due>today;
+  if(!depositAllowed) currentPaymentPlan="full";
+  const fmt=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:2}).format(v);
+  const duePretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(due);
+  const selectedStyle="border:2px solid var(--forest);background:#eef4ef";
+  const idleStyle="border:1px solid #d8ddd9;background:#fff";
+  choices.innerHTML=`
+    <label style="display:block;padding:14px;border-radius:14px;margin:8px 0;cursor:pointer;${currentPaymentPlan==="full"?selectedStyle:idleStyle}">
+      <input type="radio" name="paymentPlan" value="full" ${currentPaymentPlan==="full"?"checked":""} style="width:auto;margin-right:8px">
+      <strong>Pay in full now — ${fmt(amount)}</strong>
+      <span style="display:block;color:var(--muted);font-size:13px;margin:5px 0 0 25px">No further payment will be due.</span>
+    </label>
+    ${depositAllowed?`<label style="display:block;padding:14px;border-radius:14px;margin:8px 0;cursor:pointer;${currentPaymentPlan==="deposit"?selectedStyle:idleStyle}">
+      <input type="radio" name="paymentPlan" value="deposit" ${currentPaymentPlan==="deposit"?"checked":""} style="width:auto;margin-right:8px">
+      <strong>Pay 20% deposit now — ${fmt(deposit)}</strong>
+      <span style="display:block;color:var(--muted);font-size:13px;margin:5px 0 0 25px">Remaining ${fmt(balance)} due ${duePretty}.</span>
+    </label>`:""}`;
+  help.textContent=depositAllowed
+    ? `If you choose the deposit, the remaining 80% is due 30 days before your trip (${duePretty}). We’ll email a reminder 7 days before, 2 days before and on the due date while a balance is still outstanding.`
+    : "This trip is within 30 days, so full payment is required at booking.";
+  choices.querySelectorAll('input[name="paymentPlan"]').forEach(r=>r.addEventListener("change",()=>{currentPaymentPlan=r.value;renderPaymentPlanChoice();}));
+}
 
 function reviewBookingNow(){
   try{
@@ -1098,16 +1142,18 @@ function reviewBookingNow(){
       ${notes?`<div><span>Notes / request</span><strong style="text-align:right;max-width:60%">${escText(notes)}</strong></div>`:""}
       <div><span>Total</span><strong>${escText(total)}</strong></div>`;
 
+    renderPaymentPlanChoice();
+
     const finalBtn=document.getElementById("confirmBooking");
     const finalNotice=document.getElementById("bookingFinalNotice");
     if(currentRequestMode){
       finalBtn.textContent="Send booking request";
-      finalNotice.textContent="No payment is taken yet. The guide will review your request first.";
+      finalNotice.textContent="No payment is taken yet. Your selected payment option will apply if the guide accepts your request.";
     }else{
       finalBtn.textContent=t.isDemo ? "Pay securely with Stripe — TEST" : "Pay securely with Stripe";
       finalNotice.textContent=t.isDemo
         ? "Instant Book: the next step opens Stripe sandbox checkout. No real money will be charged."
-        : "Instant Book: payment is required before the booking can be confirmed.";
+        : (currentPaymentPlan==="deposit" ? "Instant Book: your 20% deposit is taken now and the remaining 80% is due 30 days before the trip." : "Instant Book: full payment is taken now.");
     }
 
     document.querySelectorAll(".booking-step").forEach(el=>{
@@ -1346,12 +1392,12 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
 
     if(currentRequestMode || bookingModeForTrip(t)==="request"){
       btn.textContent="Send booking request";
-      notice.textContent="No payment is taken yet. The guide will review your request first.";
+      notice.textContent="No payment is taken yet. The guide will review your request first. Your selected payment option will apply if accepted.";
     } else {
       btn.textContent=t.isDemo ? "Pay securely with Stripe — TEST" : "Pay securely with Stripe";
       notice.textContent=t.isDemo
         ? "Instant Book: tapping the button below opens Stripe sandbox checkout. No real money will be charged."
-        : "Instant Book: payment is required before the booking can be confirmed.";
+        : (currentPaymentPlan==="deposit" ? "Instant Book: pay 20% now. The remaining 80% is due 30 days before the trip." : "Instant Book: pay the full amount now.");
     }
   }
   currentBookingPrice = 0;
@@ -1627,6 +1673,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const allowedMode=bookingModeForTrip(t);
     currentRequestMode = allowedMode==="request" ? true : (allowedMode==="instant" ? false : !!requestMode);
     selectedDate="";
+    currentPaymentPlan="full";
     const notes=document.querySelector("#bookNotes");
     if(notes) notes.value="";
     const peopleSelect=document.querySelector("#bookingPeople");
@@ -1720,6 +1767,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         customer_message:document.querySelector("#bookNotes")?.value.trim() || null,
         guest_count:Number(document.querySelector("#bookingPeople").value||1),
         pricing_option_id:currentPricingOptionId || null,
+        payment_plan:currentPaymentPlan,
         return_url:window.location.origin
       };
 
@@ -1949,7 +1997,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     await claimCustomerBookings();
 
     const {data:bookings,error}=await db.from("bookings")
-      .select("id,guide_id,booking_date,guest_count,total_amount_nzd,status,payment_status,booking_type,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,stripe_refund_id,reschedule_status,proposed_booking_date,reschedule_reason,listings(title,location,region),guides(display_name,business_name,email,phone)")
+      .select("id,guide_id,booking_date,guest_count,total_amount_nzd,status,payment_status,payment_plan,amount_paid_nzd,balance_due_nzd,balance_due_date,booking_type,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,stripe_refund_id,reschedule_status,proposed_booking_date,reschedule_reason,listings(title,location,region),guides(display_name,business_name,email,phone)")
       .eq("customer_user_id",user.id)
       .order("booking_date",{ascending:false});
 
@@ -1987,7 +2035,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       let status=b.status;
       if(b.status==="cancelled"){
         status=b.refund_amount_nzd>0?`Cancelled • ${customerMoney(b.refund_amount_nzd)} refund`:"Cancelled";
-      }else if(b.payment_status==="paid"&&b.status==="confirmed") status="Confirmed & paid";
+      }else if(b.payment_status==="paid"&&b.status==="confirmed") status="Confirmed & paid in full";
+      else if(b.payment_status==="deposit_paid"&&b.status==="confirmed") status="Confirmed — 20% deposit paid";
       else if(b.payment_status==="partially_refunded") status="Partially refunded";
       else if(b.payment_status==="refunded") status="Refunded";
       else if(b.status==="pending"&&b.booking_type==="request") status="Awaiting guide response";
@@ -2004,7 +2053,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
           <textarea class="customer-review-text" data-booking="${b.id}" rows="3" placeholder="Optional review"></textarea>
           <button class="primary submit-guide-review" type="button" data-booking="${b.id}" data-guide="${b.guide_id}" style="margin-top:8px">Submit review</button>
         </div>`;
-      }else if(b.payment_status==="paid"&&["confirmed","completed"].includes(b.status)){
+      }else if(["paid","deposit_paid"].includes(b.payment_status)&&["confirmed","completed"].includes(b.status)){
         reviewHtml=`<div class="customer-review-box"><span style="color:var(--muted)">Reviews open on ${reviewUnlockText(b)}, 2 days after the trip.</span></div>`;
       }
 
@@ -2144,6 +2193,18 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
   document.querySelectorAll('[data-page="customer"]').forEach(btn=>btn.addEventListener("click",()=>setTimeout(()=>loadCustomerDashboard(),0)));
   loadCustomerDashboard().catch(err=>console.warn("Customer dashboard restore:",err));
 
+  async function payRemainingBalance(token){
+    const r=await fetch(`${SUPABASE_URL}/functions/v1/booking-status`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+      body:JSON.stringify({public_token:token,action:"pay_balance",return_url:window.location.origin})
+    });
+    const out=await r.json();
+    if(!r.ok) throw new Error(out.error||"The balance payment could not be opened.");
+    if(out.checkout_url) window.location.assign(out.checkout_url);
+  }
+  window.payRemainingBalance=payRemainingBalance;
+
   async function loadPublicBookingStatus(token, sessionId="") {
     const title=document.querySelector("#bookingStatusTitle");
     const body=document.querySelector("#bookingStatusBody");
@@ -2152,41 +2213,36 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     body.innerHTML='<p style="color:var(--muted)">Checking the latest status.</p>';
     try {
       const r=await fetch(`${SUPABASE_URL}/functions/v1/booking-status`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+        method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
         body:JSON.stringify({public_token:token,session_id:sessionId||null})
       });
       const b=await r.json();
       if(!r.ok) throw new Error(b.error||"Booking could not be loaded.");
-      const money=new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(b.total_amount_nzd||0));
+      const fmt=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:2}).format(Number(v||0));
       const pretty=new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(b.booking_date+"T12:00:00"));
-      let statusText="Awaiting guide response";
-      let action="";
+      const duePretty=b.balance_due_date?new Intl.DateTimeFormat("en-NZ",{day:"numeric",month:"long",year:"numeric"}).format(new Date(b.balance_due_date+"T12:00:00")):"";
+      let statusText="Awaiting guide response"; let action="";
       if(b.status==="declined") statusText="Request declined";
-      else if(b.payment_status==="paid" && b.status==="confirmed") statusText="Confirmed & paid";
-      else if(b.accepted_at && b.payment_status!=="paid") {
-        statusText="Accepted — payment required";
-        if(b.checkout_url) action=`<button class="primary" type="button" onclick="window.location.assign('${b.checkout_url}')">Pay now securely with Stripe</button>`;
-      } else if(b.booking_type==="instant") statusText="Payment pending";
-
+      else if(b.payment_status==="paid" && b.status==="confirmed") statusText="Confirmed & paid in full";
+      else if(b.payment_status==="deposit_paid" && b.status==="confirmed") {statusText="Confirmed — 20% deposit paid";if(b.can_pay_balance) action=`<button class="primary" type="button" onclick="payRemainingBalance('${token}').catch(e=>alert(e.message))">Pay remaining ${fmt(b.balance_due_nzd)} securely</button>`;}
+      else if(b.accepted_at && !["paid","deposit_paid"].includes(b.payment_status)) {statusText="Accepted — payment required";if(b.checkout_url) action=`<button class="primary" type="button" onclick="window.location.assign('${b.checkout_url}')">Make initial payment securely</button>`;}
+      else if(b.booking_type==="instant") statusText="Payment pending";
       title.textContent=b.trip_title;
-      body.innerHTML=`
-        <div class="summary">
+      body.innerHTML=`<div class="summary">
           <div><span>Status</span><strong>${statusText}</strong></div>
           <div><span>Date</span><strong>${pretty}</strong></div>
           <div><span>People</span><strong>${b.guest_count}</strong></div>
-          <div><span>Total</span><strong>${money}</strong></div>
+          <div><span>Total</span><strong>${fmt(b.total_amount_nzd)}</strong></div>
           <div><span>Booking type</span><strong>${b.booking_type==="instant"?"Instant Book":"Request to Book"}</strong></div>
+          <div><span>Payment option</span><strong>${b.payment_plan==="deposit"?"20% deposit + 80% later":"Pay in full"}</strong></div>
+          ${b.payment_plan==="deposit"?`<div><span>Paid so far</span><strong>${fmt(b.amount_paid_nzd)}</strong></div><div><span>Remaining balance</span><strong>${fmt(b.balance_due_nzd)}</strong></div>${duePretty?`<div><span>Balance due</span><strong>${duePretty}</strong></div>`:""}`:""}
         </div>
         ${b.status==="declined"?'<div class="notice" style="margin-top:14px">The guide was unable to accept this request. No payment has been taken.</div>':""}
-        ${b.payment_status==="paid"?'<div class="notice" style="margin-top:14px"><strong>Booking confirmed.</strong> Stripe has verified your payment.</div>':""}
+        ${b.payment_status==="paid"?'<div class="notice" style="margin-top:14px"><strong>Paid in full.</strong> No further payment reminders will be sent.</div>':""}
+        ${b.payment_status==="deposit_paid"?`<div class="notice" style="margin-top:14px"><strong>Your date is secured.</strong> The remaining balance is due ${duePretty}. Reminder emails are only sent while this balance remains unpaid.</div>`:""}
         ${b.booking_type==="request" && !b.accepted_at && b.status==="pending"?'<div class="notice" style="margin-top:14px">Your request is waiting for the guide to accept or decline it. No payment is due yet.</div>':""}
         <div style="margin-top:16px">${action}</div>`;
-    } catch(err) {
-      console.error(err);
-      title.textContent="Booking status";
-      body.innerHTML=`<div class="notice">${err.message||"We couldn't load this booking."}</div>`;
-    }
+    } catch(err) {console.error(err);title.textContent="Booking status";body.innerHTML=`<div class="notice">${err.message||"We couldn't load this booking."}</div>`;}
   }
 
   let guidePastBookingRows=[];
@@ -2201,14 +2257,18 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const count=document.querySelector("#guidePastBookingCount");
     if(count) count.textContent=`${filtered.length} ${filtered.length===1?"booking":"bookings"}`;
     if(!filtered.length){container.innerHTML='<div class="guide-past-empty">No past bookings match your search.</div>';return;}
-    container.innerHTML=filtered.map(b=>`<article class="guide-past-card">
+    container.innerHTML=filtered.map(b=>{
+      const cancelled=b.status==="cancelled";
+      return `<article class="guide-past-card">
       <div class="guide-past-card-top">
         <div><h4>${clean(b.customer_name||"Customer")}</h4><div class="guide-past-meta">${clean(b.listings?.title||"Guided trip")} · ${customerDateNZ(b.booking_date)}<br>${Number(b.guest_count||0)} ${Number(b.guest_count||0)===1?"guest":"guests"} · Booking total ${money(b.total_amount_nzd)}</div></div>
-        <span class="guide-paid-stamp">GUIDE PAID</span>
+        <span class="guide-paid-stamp" ${cancelled?'style="background:#f6ece9;color:#805044"':''}>${cancelled?"CANCELLED":"GUIDE PAID"}</span>
       </div>
-      <div class="guide-payout-strip" style="margin-top:12px"><span>Guide payout</span><strong>${money(b.guide_payout_nzd)}</strong></div>
-      <div class="guide-past-meta" style="margin-top:10px">${b.customer_email?`Email: ${clean(b.customer_email)}`:""}${b.customer_phone?`${b.customer_email?" · ":""}Phone: ${clean(b.customer_phone)}`:""}${b.guide_paid_at?`<br>Marked paid: ${new Date(b.guide_paid_at).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"})}`:""}</div>
-    </article>`).join("");
+      ${cancelled
+        ? `<div class="notice" style="margin-top:12px"><strong>Cancelled booking</strong>${b.cancellation_reason?`<br>${clean(b.cancellation_reason)}`:""}${Number(b.refund_amount_nzd||0)>0?`<br>Refund: ${money(b.refund_amount_nzd)}`:""}</div>`
+        : `<div class="guide-payout-strip" style="margin-top:12px"><span>Guide payout</span><strong>${money(b.guide_payout_nzd)}</strong></div>`}
+      <div class="guide-past-meta" style="margin-top:10px">${b.customer_email?`Email: ${clean(b.customer_email)}`:""}${b.customer_phone?`${b.customer_email?" · ":""}Phone: ${clean(b.customer_phone)}`:""}${!cancelled&&b.guide_paid_at?`<br>Marked paid: ${new Date(b.guide_paid_at).toLocaleDateString("en-NZ",{day:"numeric",month:"short",year:"numeric"})}`:""}</div>
+    </article>`}).join("");
   }
   async function loadGuidePastBookings(){
     const container=document.querySelector("#guidePastBookingsContainer");
@@ -2216,13 +2276,11 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     container.innerHTML='<p style="color:var(--muted)">Loading past bookings…</p>';
     const today=nzDateString();
     const {data,error}=await db.from("bookings")
-      .select("id,customer_name,customer_email,customer_phone,booking_date,guest_count,total_amount_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,listings(title)")
+      .select("id,customer_name,customer_email,customer_phone,booking_date,guest_count,total_amount_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,cancelled_at,cancellation_reason,refund_amount_nzd,listings(title)")
       .eq("guide_id",currentGuide.id)
-      .eq("guide_payout_status","paid")
-      .lt("booking_date",today)
       .order("booking_date",{ascending:false});
     if(error){console.error(error);container.innerHTML='<div class="guide-past-empty">Past bookings could not be loaded right now.</div>';return;}
-    guidePastBookingRows=data||[];
+    guidePastBookingRows=(data||[]).filter(b=>b.status==="cancelled" || (b.guide_payout_status==="paid" && b.booking_date<today));
     renderGuidePastBookings();
   }
 
@@ -2232,18 +2290,18 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     if(!container || !currentGuide) return;
     container.innerHTML='<p style="color:var(--muted)">Loading bookings…</p>';
     const {data,error}=await db.from("bookings")
-      .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,platform_fee_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,booking_type,accepted_at,declined_at,created_at,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,reschedule_status,proposed_booking_date,reschedule_reason,listings(title)")
+      .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,platform_fee_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,booking_type,accepted_at,declined_at,created_at,payment_plan,amount_paid_nzd,balance_due_nzd,balance_due_date,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,reschedule_status,proposed_booking_date,reschedule_reason,listings(title)")
       .eq("guide_id",currentGuide.id)
       .order("booking_date",{ascending:true});
     if(error){ console.error(error); container.innerHTML='<div class="guide-booking-empty">Bookings could not be loaded right now.</div>'; return; }
     const allRows=data||[];
     const today=nzDateString();
     const isArchivedPaid=b=>b.guide_payout_status==="paid" && b.booking_date<today;
-    const rows=allRows.filter(b=>!isArchivedPaid(b));
+    const rows=allRows.filter(b=>b.status!=="cancelled" && !isArchivedPaid(b));
     const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
     const clean=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     const isPending=b=>b.booking_type==="request"&&b.status==="pending"&&!b.accepted_at;
-    const isUpcoming=b=>b.status==="confirmed"&&b.payment_status==="paid"&&b.booking_date>=today;
+    const isUpcoming=b=>b.status==="confirmed"&&["paid","deposit_paid"].includes(b.payment_status)&&b.booking_date>=today;
     const isPast=b=>b.booking_date<today && !isPending(b);
     const pendingRows=rows.filter(isPending);
     const upcomingRows=rows.filter(isUpcoming);
@@ -2259,8 +2317,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       const title=clean(b.listings?.title||"Guided trip");
       const pretty=customerDateNZ(b.booking_date);
       const pending=isPending(b), upcoming=isUpcoming(b), past=isPast(b);
-      let state=b.status==="cancelled"?"CANCELLED":b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
-      let badgeClass=b.status==="cancelled"||b.status==="declined"?"cancelled":pending?"pending":b.payment_status==="paid"?"paid":"";
+      let state=b.status==="cancelled"?"CANCELLED":b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":b.payment_status==="deposit_paid"?"CONFIRMED — DEPOSIT PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
+      let badgeClass=b.status==="cancelled"||b.status==="declined"?"cancelled":pending?"pending":["paid","deposit_paid"].includes(b.payment_status)?"paid":"";
       let cardClass=b.status==="cancelled"||b.status==="declined"?"is-cancelled":pending?"is-pending":upcoming?"is-upcoming":past?"is-past":"";
       const requestActions=pending ? `
         <div class="booking-action-row" style="margin-top:14px">
@@ -2269,7 +2327,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         </div>` : "";
 
       let tripActions="";
-      if(b.status==="confirmed" && b.payment_status==="paid" && daysUntilBooking(b.booking_date)>=0){
+      if(b.status==="confirmed" && ["paid","deposit_paid"].includes(b.payment_status) && daysUntilBooking(b.booking_date)>=0){
         tripActions=`<details class="booking-policy-box" style="margin-top:12px"><summary style="cursor:pointer;font-weight:900;color:var(--forest)">Trip options & date changes</summary>
           <p>Use these options if weather, river, access or safety conditions mean the trip cannot go ahead as planned.</p>
           <label style="margin-top:8px">Offer a new date<input class="guide-new-date" data-id="${b.id}" type="date" min="${nzDateString()}"></label>
@@ -2301,7 +2359,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
           <div class="guide-booking-info"><span>Booking total</span><strong>${money(b.total_amount_nzd)}</strong></div>
           <div class="guide-booking-info"><span>Type</span><strong>${b.booking_type==="request"?"Request to Book":"Instant Book"}</strong></div>
         </div>
-        ${b.payment_status==="paid"?`<div class="guide-payout-strip"><span>Your guide amount after the Kiwi Guides 9% + GST fee</span><strong>${money(b.guide_payout_nzd)}</strong></div>`:""}
+        ${b.payment_status==="paid"?`<div class="guide-payout-strip"><span>Your guide amount after the Kiwi Guides 9% + GST fee</span><strong>${money(b.guide_payout_nzd)}</strong></div>`:b.payment_status==="deposit_paid"?`<div class="notice" style="margin-top:10px"><strong>20% deposit paid.</strong> ${money(b.balance_due_nzd)} remains due${b.balance_due_date?` by ${customerDateNZ(b.balance_due_date)}`:""}.</div>`:""}
         <div class="guide-customer-box">
           <div><strong>${clean(b.customer_name||"Customer")}</strong><small>${email}${phone?` · ${phone}`:""}</small></div>
           <div class="guide-contact-actions">
@@ -2316,7 +2374,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
 
     const sections=[
       {key:"pending",title:"Needs your attention",note:"Respond to these requests",items:pendingRows},
-      {key:"upcoming",title:"Upcoming trips",note:"Confirmed and paid",items:upcomingRows},
+      {key:"upcoming",title:"Upcoming trips",note:"Confirmed bookings",items:upcomingRows},
       {key:"other",title:"Other bookings",note:"Awaiting payment, past, declined or cancelled",items:rows.filter(b=>!isPending(b)&&!isUpcoming(b))}
     ];
     container.innerHTML=sections.filter(s=>s.items.length).map(section=>`<section class="guide-booking-section" data-booking-section="${section.key}"><div class="guide-booking-section-head"><h4>${section.title}</h4><span>${section.note} · ${section.items.length}</span></div>${section.items.map(card).join("")}</section>`).join("");
@@ -2680,7 +2738,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     const {data:bookingData}=await db.from("bookings").select("status,payment_status,booking_type,accepted_at,booking_date").eq("guide_id",currentGuide.id);
     const bookings=bookingData||[], today=new Date().toISOString().slice(0,10);
     const pending=bookings.filter(b=>b.booking_type==="request"&&b.status==="pending"&&!b.accepted_at).length;
-    const upcoming=bookings.filter(b=>b.status==="confirmed"&&b.payment_status==="paid"&&b.booking_date>=today).length;
+    const upcoming=bookings.filter(b=>b.status==="confirmed"&&["paid","deposit_paid"].includes(b.payment_status)&&b.booking_date>=today).length;
     document.querySelector("#guidePendingCount").textContent=pending;
     document.querySelector("#guideUpcomingCount").textContent=upcoming;
     const attention=document.querySelector("#guideAttentionList");
@@ -3296,22 +3354,6 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     window.location.href =
       `mailto:thebookpioneer@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
-})();
-</script>
-
-
-<script>
-window.addEventListener("load", () => {
-  if (window.location.hash === "#payment-success") {
-    try { setPage("payment-success"); } catch(e) { console.error(e); }
-  }
-});
-window.addEventListener("hashchange", () => {
-  if (window.location.hash === "#payment-success") {
-    try { setPage("payment-success"); } catch(e) { console.error(e); }
-  }
-});
-
   const openPastBtn=document.querySelector("#openGuidePastBookings");
   if(openPastBtn) openPastBtn.addEventListener("click",async()=>{
     showPage("guide-past-bookings",true);
@@ -3326,6 +3368,21 @@ window.addEventListener("hashchange", () => {
   const pastDate=document.querySelector("#guidePastDateSearch");
   if(pastName) pastName.addEventListener("input",renderGuidePastBookings);
   if(pastDate) pastDate.addEventListener("change",renderGuidePastBookings);
+
+})();
+</script>
+
+<script>
+window.addEventListener("load", () => {
+  if (window.location.hash === "#payment-success") {
+    try { setPage("payment-success"); } catch(e) { console.error(e); }
+  }
+});
+window.addEventListener("hashchange", () => {
+  if (window.location.hash === "#payment-success") {
+    try { setPage("payment-success"); } catch(e) { console.error(e); }
+  }
+});
 </script>
 
 </body>

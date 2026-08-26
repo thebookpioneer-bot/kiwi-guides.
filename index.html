@@ -212,6 +212,19 @@ textarea{min-height:105px;resize:vertical}
 .guide-dashboard-nav{display:flex;flex-direction:column;gap:8px;position:sticky;top:14px}.guide-tab-btn{border:1px solid #dfe7e1;background:#fff;border-radius:12px;padding:12px 14px;text-align:left;font-weight:800;cursor:pointer}.guide-tab-btn.active{background:var(--forest);color:#fff;border-color:var(--forest)}
 .guide-tab-panel{display:none}.guide-tab-panel.active{display:block}
 .guide-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.guide-quick-card{border:1px solid #dfe7e1;background:#fff;border-radius:16px;padding:18px;text-align:left;cursor:pointer}.guide-quick-card strong{display:block;color:var(--forest);font-size:17px;margin-bottom:4px}.guide-quick-card span{color:var(--muted);font-size:14px;line-height:1.45}.guide-attention-item{padding:12px 0;border-bottom:1px solid #ecefec}.guide-attention-item:last-child{border-bottom:0}
+.guide-booking-hero{background:linear-gradient(135deg,#163b29,#28563e);color:#fff;border-radius:22px;padding:22px;margin-bottom:16px;box-shadow:0 16px 36px rgba(18,48,32,.18)}
+.guide-booking-hero .eyebrow{color:#cfe0d4}.guide-booking-hero h3{font-size:25px;margin:4px 0 7px}.guide-booking-hero p{margin:0;color:#e3ede6;line-height:1.55}
+.guide-booking-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.guide-booking-kpi{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:13px}.guide-booking-kpi strong{display:block;font-size:22px}.guide-booking-kpi span{font-size:12px;color:#dfe9e2}
+.guide-booking-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 18px}.guide-booking-filter{border:1px solid #d9e2dc;background:#fff;color:var(--forest);border-radius:999px;padding:9px 13px;font-weight:800;cursor:pointer}.guide-booking-filter.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+.guide-booking-section{margin-top:18px}.guide-booking-section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:10px}.guide-booking-section-head h4{margin:0;font-size:19px}.guide-booking-section-head span{font-size:12px;color:var(--muted)}
+.guide-booking-card{border:1px solid #e0e7e2;border-radius:18px;padding:17px;margin-bottom:12px;background:#fff;box-shadow:0 8px 24px rgba(20,45,30,.055)}.guide-booking-card.is-pending{border-left:5px solid #b98231}.guide-booking-card.is-upcoming{border-left:5px solid #2c7450}.guide-booking-card.is-past{opacity:.88}.guide-booking-card.is-cancelled{border-left:5px solid #9f6d61}
+.guide-booking-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.guide-booking-title{font-size:18px;font-weight:900;color:var(--forest)}.guide-booking-date{font-size:13px;color:var(--muted);margin-top:3px}.guide-booking-status{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;letter-spacing:.04em;background:#eef4ef;color:var(--forest)}.guide-booking-status.pending{background:#fff4df;color:#86580e}.guide-booking-status.paid{background:#e8f5ed;color:#276744}.guide-booking-status.cancelled{background:#f6ece9;color:#805044}
+.guide-booking-info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}.guide-booking-info{background:#f7f9f7;border-radius:12px;padding:10px 11px}.guide-booking-info span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:800}.guide-booking-info strong{display:block;margin-top:3px;font-size:14px;color:#25382d}
+.guide-customer-box{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;background:#f6f8f6;border-radius:14px;padding:12px;margin-top:10px}.guide-customer-box strong{display:block}.guide-customer-box small{color:var(--muted)}.guide-contact-actions{display:flex;gap:7px;flex-wrap:wrap}.guide-contact-link{display:inline-flex;align-items:center;text-decoration:none;border:1px solid #d8e0da;background:#fff;color:var(--forest);border-radius:10px;padding:8px 10px;font-size:12px;font-weight:800}
+.guide-payout-strip{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#edf5ef;border-radius:12px;padding:11px 12px;margin-top:10px}.guide-payout-strip span{font-size:12px;color:#50705c}.guide-payout-strip strong{color:var(--forest)}
+.guide-customer-note{margin-top:10px;padding:11px 12px;background:#fffaf1;border:1px solid #f0e1c6;border-radius:12px;font-size:13px;line-height:1.5}.guide-booking-empty{padding:28px 18px;text-align:center;border:1px dashed #d5dfd8;border-radius:16px;color:var(--muted);background:#fbfcfb}
+@media(max-width:700px){.guide-booking-kpis{grid-template-columns:1fr}.guide-booking-info-grid{grid-template-columns:1fr 1fr}.guide-booking-card{padding:14px}.guide-booking-hero{padding:18px}.guide-booking-title{font-size:17px}}
+
 @media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-dashboard-nav{position:static;display:flex;overflow-x:auto;gap:8px;padding-bottom:4px}.guide-tab-btn{white-space:nowrap;text-align:center}.guide-quick-grid{grid-template-columns:1fr}}
 
 
@@ -694,10 +707,26 @@ textarea{min-height:105px;resize:vertical}
         </section>
 
         <section class="guide-tab-panel" data-guide-panel="bookings">
+          <div class="guide-booking-hero">
+            <div class="eyebrow">BOOKING CENTRE</div>
+            <h3>Your trips, organised in one place</h3>
+            <p>Respond to new requests, prepare for upcoming customers and keep an eye on what Kiwi Guides will pay you.</p>
+            <div class="guide-booking-kpis">
+              <div class="guide-booking-kpi"><strong id="guideBookingHeroPending">0</strong><span>requests waiting</span></div>
+              <div class="guide-booking-kpi"><strong id="guideBookingHeroUpcoming">0</strong><span>upcoming trips</span></div>
+              <div class="guide-booking-kpi"><strong id="guideBookingHeroPayout">$0</strong><span>upcoming guide earnings</span></div>
+            </div>
+          </div>
           <div class="panel">
-            <div class="eyebrow">BOOKINGS</div>
-            <h3>Booking requests & upcoming trips</h3>
-            <p style="color:var(--muted)">Request to Book trips appear here for you to accept or decline. Instant Book trips appear once payment is confirmed.</p>
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+              <div><div class="eyebrow">BOOKINGS</div><h3 style="margin:4px 0">Manage your customers</h3><p style="color:var(--muted);margin:0">Request to Book trips need your response. Confirmed bookings include the customer details you need for the day.</p></div>
+            </div>
+            <div class="guide-booking-toolbar" id="guideBookingFilters">
+              <button class="guide-booking-filter active" type="button" data-booking-filter="all">All</button>
+              <button class="guide-booking-filter" type="button" data-booking-filter="pending">Needs action</button>
+              <button class="guide-booking-filter" type="button" data-booking-filter="upcoming">Upcoming</button>
+              <button class="guide-booking-filter" type="button" data-booking-filter="past">Past</button>
+            </div>
             <div id="guideBookingsContainer"><p style="color:var(--muted)">Loading bookings…</p></div>
           </div>
         </section>
@@ -2106,6 +2135,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     }
   }
 
+  let activeGuideBookingFilter="all";
   async function loadGuideBookings(){
     const container=document.querySelector("#guideBookingsContainer");
     if(!container || !currentGuide) return;
@@ -2114,60 +2144,105 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       .select("id,listing_id,customer_name,customer_email,customer_phone,customer_message,booking_date,guest_count,total_amount_nzd,platform_fee_nzd,guide_payout_nzd,guide_payout_status,guide_paid_at,status,payment_status,booking_type,accepted_at,declined_at,created_at,cancelled_at,cancelled_by,cancellation_reason,refund_percent,refund_amount_nzd,reschedule_status,proposed_booking_date,reschedule_reason,listings(title)")
       .eq("guide_id",currentGuide.id)
       .order("booking_date",{ascending:true});
-    if(error){ console.error(error); container.innerHTML='<p style="color:var(--muted)">Bookings could not be loaded.</p>'; return; }
+    if(error){ console.error(error); container.innerHTML='<div class="guide-booking-empty">Bookings could not be loaded right now.</div>'; return; }
     const rows=data||[];
-    if(!rows.length){ container.innerHTML='<p style="color:var(--muted)">No bookings yet.</p>'; return; }
     const money=v=>new Intl.NumberFormat("en-NZ",{style:"currency",currency:"NZD",maximumFractionDigits:0}).format(Number(v||0));
-    container.innerHTML=rows.map(b=>{
-      const title=b.listings?.title||"Guided trip";
+    const clean=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const today=nzDateString();
+    const isPending=b=>b.booking_type==="request"&&b.status==="pending"&&!b.accepted_at;
+    const isUpcoming=b=>b.status==="confirmed"&&b.payment_status==="paid"&&b.booking_date>=today;
+    const isPast=b=>b.booking_date<today && !isPending(b);
+    const pendingRows=rows.filter(isPending);
+    const upcomingRows=rows.filter(isUpcoming);
+    const upcomingEarnings=upcomingRows.reduce((sum,b)=>sum+Number(b.guide_payout_nzd||0),0);
+    const hp=document.querySelector("#guideBookingHeroPending"), hu=document.querySelector("#guideBookingHeroUpcoming"), he=document.querySelector("#guideBookingHeroPayout");
+    if(hp) hp.textContent=pendingRows.length;
+    if(hu) hu.textContent=upcomingRows.length;
+    if(he) he.textContent=money(upcomingEarnings);
+
+    if(!rows.length){ container.innerHTML='<div class="guide-booking-empty"><strong style="display:block;color:var(--forest);margin-bottom:5px">No bookings yet</strong>Your customer requests and confirmed trips will appear here as soon as they come in.</div>'; return; }
+
+    const card=b=>{
+      const title=clean(b.listings?.title||"Guided trip");
       const pretty=customerDateNZ(b.booking_date);
+      const pending=isPending(b), upcoming=isUpcoming(b), past=isPast(b);
       let state=b.status==="cancelled"?"CANCELLED":b.status==="declined"?"DECLINED":(b.payment_status==="paid"?"CONFIRMED & PAID":(b.accepted_at?"ACCEPTED — AWAITING PAYMENT":(b.booking_type==="request"?"REQUEST PENDING":"PAYMENT PENDING")));
-      const requestActions=b.booking_type==="request" && b.status==="pending" && !b.accepted_at ? `
-        <div class="booking-action-row">
+      let badgeClass=b.status==="cancelled"||b.status==="declined"?"cancelled":pending?"pending":b.payment_status==="paid"?"paid":"";
+      let cardClass=b.status==="cancelled"||b.status==="declined"?"is-cancelled":pending?"is-pending":upcoming?"is-upcoming":past?"is-past":"";
+      const requestActions=pending ? `
+        <div class="booking-action-row" style="margin-top:14px">
           <button class="primary guide-booking-decision" type="button" data-id="${b.id}" data-decision="accept">Accept request</button>
           <button class="pill guide-booking-decision" type="button" data-id="${b.id}" data-decision="decline">Decline</button>
         </div>` : "";
 
       let tripActions="";
       if(b.status==="confirmed" && b.payment_status==="paid" && daysUntilBooking(b.booking_date)>=0){
-        tripActions=`<div class="booking-policy-box">
-          <h4>Manage this trip</h4>
-          <p>For unsuitable weather, river, access or safety conditions you can offer the customer another date or issue a full refund.</p>
-          <label style="margin-top:8px">Offer a new date
-            <input class="guide-new-date" data-id="${b.id}" type="date" min="${nzDateString()}">
-          </label>
+        tripActions=`<details class="booking-policy-box" style="margin-top:12px"><summary style="cursor:pointer;font-weight:900;color:var(--forest)">Trip options & date changes</summary>
+          <p>Use these options if weather, river, access or safety conditions mean the trip cannot go ahead as planned.</p>
+          <label style="margin-top:8px">Offer a new date<input class="guide-new-date" data-id="${b.id}" type="date" min="${nzDateString()}"></label>
           <div class="booking-action-row">
             <button class="primary guide-offer-reschedule" type="button" data-id="${b.id}">Offer new date</button>
             <button class="pill guide-full-refund" type="button" data-id="${b.id}" data-reason="weather">Full refund — weather/conditions</button>
             <button class="pill guide-full-refund" type="button" data-id="${b.id}" data-reason="guide">Cancel trip — full refund</button>
           </div>
-        </div>`;
+        </details>`;
       }
 
       let reschedule="";
-      if(b.reschedule_status==="offered"&&b.proposed_booking_date){
-        reschedule=`<div class="notice" style="margin-top:10px"><strong>Date change offered:</strong> ${customerDateNZ(b.proposed_booking_date)} — waiting for customer response.</div>`;
-      }else if(b.reschedule_status==="accepted"){
-        reschedule=`<div class="notice" style="margin-top:10px"><strong>New date accepted:</strong> ${customerDateNZ(b.booking_date)}.</div>`;
-      }else if(b.reschedule_status==="declined"){
-        reschedule=`<div class="notice" style="margin-top:10px">Customer declined the proposed new date. Contact them to discuss another date or a refund if conditions prevent the trip.</div>`;
-      }
+      if(b.reschedule_status==="offered"&&b.proposed_booking_date){reschedule=`<div class="notice" style="margin-top:10px"><strong>Date change offered:</strong> ${customerDateNZ(b.proposed_booking_date)} — waiting for customer response.</div>`;}
+      else if(b.reschedule_status==="accepted"){reschedule=`<div class="notice" style="margin-top:10px"><strong>New date accepted:</strong> ${customerDateNZ(b.booking_date)}.</div>`;}
+      else if(b.reschedule_status==="declined"){reschedule=`<div class="notice" style="margin-top:10px">Customer declined the proposed new date. Contact them to discuss another option.</div>`;}
 
       let cancellation="";
-      if(b.status==="cancelled"){
-        cancellation=`<div class="notice" style="margin-top:10px"><strong>Cancelled:</strong> ${b.cancellation_reason||""}${Number(b.refund_amount_nzd||0)>0?`<br>Refund: ${money(b.refund_amount_nzd)} (${Number(b.refund_percent||0)}%)`:"<br>No refund issued."}</div>`;
-      }
+      if(b.status==="cancelled"){cancellation=`<div class="notice" style="margin-top:10px"><strong>Cancelled:</strong> ${clean(b.cancellation_reason||"")}${Number(b.refund_amount_nzd||0)>0?`<br>Refund: ${money(b.refund_amount_nzd)} (${Number(b.refund_percent||0)}%)`:"<br>No refund issued."}</div>`;}
 
-      return `<div class="listing-item">
-        <strong>${title}</strong>
-        <p>${pretty} • ${b.guest_count} ${b.guest_count==1?"person":"people"} • ${money(b.total_amount_nzd)}</p>
-        ${b.payment_status==="paid"?`<div class="notice" style="margin:8px 0"><strong>Your guide amount:</strong> ${money(b.guide_payout_nzd)} after the Kiwi Guides 9% + GST fee.<br><span style="font-size:12px">Kiwi Guides pays you directly — no Stripe account is required.${b.guide_payout_status==="paid"?" This payout has been marked paid.":""}</span></div>`:""}
-        <span class="status">${state}</span>
-        <p style="font-size:13px;color:var(--muted);margin-top:8px"><strong>${b.customer_name}</strong><br>${b.customer_email}${b.customer_phone?` • ${b.customer_phone}`:""}</p>
-        ${b.customer_message?`<div class="notice" style="margin-top:8px"><strong>Customer note:</strong> ${b.customer_message}</div>`:""}
+      const phone=clean(b.customer_phone||"");
+      const email=clean(b.customer_email||"");
+      return `<article class="guide-booking-card ${cardClass}" data-booking-group="${pending?"pending":upcoming?"upcoming":past?"past":"all"}">
+        <div class="guide-booking-card-head">
+          <div><div class="guide-booking-title">${title}</div><div class="guide-booking-date">${pretty}</div></div>
+          <span class="guide-booking-status ${badgeClass}">${state}</span>
+        </div>
+        <div class="guide-booking-info-grid">
+          <div class="guide-booking-info"><span>Guests</span><strong>${Number(b.guest_count||0)} ${Number(b.guest_count||0)===1?"person":"people"}</strong></div>
+          <div class="guide-booking-info"><span>Booking total</span><strong>${money(b.total_amount_nzd)}</strong></div>
+          <div class="guide-booking-info"><span>Type</span><strong>${b.booking_type==="request"?"Request to Book":"Instant Book"}</strong></div>
+        </div>
+        ${b.payment_status==="paid"?`<div class="guide-payout-strip"><span>Your guide amount after the Kiwi Guides 9% + GST fee</span><strong>${money(b.guide_payout_nzd)}</strong></div>`:""}
+        <div class="guide-customer-box">
+          <div><strong>${clean(b.customer_name||"Customer")}</strong><small>${email}${phone?` · ${phone}`:""}</small></div>
+          <div class="guide-contact-actions">
+            ${email?`<a class="guide-contact-link" href="mailto:${email}">Email</a>`:""}
+            ${phone?`<a class="guide-contact-link" href="tel:${phone.replace(/[^+0-9]/g,"")}">Call</a>`:""}
+          </div>
+        </div>
+        ${b.customer_message?`<div class="guide-customer-note"><strong>Customer note</strong><br>${clean(b.customer_message)}</div>`:""}
         ${reschedule}${cancellation}${requestActions}${tripActions}
-      </div>`;
-    }).join("");
+      </article>`;
+    };
+
+    const sections=[
+      {key:"pending",title:"Needs your attention",note:"Respond to these requests",items:pendingRows},
+      {key:"upcoming",title:"Upcoming trips",note:"Confirmed and paid",items:upcomingRows},
+      {key:"other",title:"Other bookings",note:"Awaiting payment, past, declined or cancelled",items:rows.filter(b=>!isPending(b)&&!isUpcoming(b))}
+    ];
+    container.innerHTML=sections.filter(s=>s.items.length).map(section=>`<section class="guide-booking-section" data-booking-section="${section.key}"><div class="guide-booking-section-head"><h4>${section.title}</h4><span>${section.note} · ${section.items.length}</span></div>${section.items.map(card).join("")}</section>`).join("");
+
+    const applyFilter=()=>{
+      container.querySelectorAll(".guide-booking-card").forEach(c=>{
+        const g=c.dataset.bookingGroup;
+        c.style.display=activeGuideBookingFilter==="all"?"":(g===activeGuideBookingFilter?"":"none");
+      });
+      container.querySelectorAll(".guide-booking-section").forEach(sec=>{
+        const visible=[...sec.querySelectorAll(".guide-booking-card")].some(c=>c.style.display!=="none");
+        sec.style.display=visible?"":"none";
+      });
+    };
+    document.querySelectorAll("#guideBookingFilters .guide-booking-filter").forEach(btn=>{
+      btn.classList.toggle("active",btn.dataset.bookingFilter===activeGuideBookingFilter);
+      btn.onclick=()=>{activeGuideBookingFilter=btn.dataset.bookingFilter;document.querySelectorAll("#guideBookingFilters .guide-booking-filter").forEach(x=>x.classList.toggle("active",x===btn));applyFilter();};
+    });
+    applyFilter();
 
     container.querySelectorAll(".guide-booking-decision").forEach(btn=>btn.addEventListener("click",async()=>{
       const decision=btn.dataset.decision, bookingId=btn.dataset.id, original=btn.textContent;
@@ -2175,43 +2250,29 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
       try{
         const {data:{session}}=await db.auth.getSession();
         if(!session?.access_token) throw new Error("Please log in again.");
-        const r=await fetch(`${SUPABASE_URL}/functions/v1/guide-booking-decision`,{
-          method:"POST",
-          headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":`Bearer ${session.access_token}`},
-          body:JSON.stringify({booking_id:bookingId,decision})
-        });
+        const r=await fetch(`${SUPABASE_URL}/functions/v1/guide-booking-decision`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"Authorization":`Bearer ${session.access_token}`},body:JSON.stringify({booking_id:bookingId,decision})});
         const result=await r.json();
         if(!r.ok) throw new Error(result.error||"The booking could not be updated.");
         if(decision==="accept") alert("Request accepted. The customer can now continue to payment.");
-        await loadGuideBookings();
+        await loadGuideBookings(); try{await refreshGuideDashboardStats();}catch(e){}
       }catch(err){ alert(err.message||"The booking could not be updated."); btn.disabled=false; btn.textContent=original; }
     }));
 
     container.querySelectorAll(".guide-offer-reschedule").forEach(btn=>btn.addEventListener("click",async()=>{
-      const input=container.querySelector(`.guide-new-date[data-id="${btn.dataset.id}"]`);
-      const proposed=input?.value;
+      const input=container.querySelector(`.guide-new-date[data-id="${btn.dataset.id}"]`), proposed=input?.value;
       if(!proposed){alert("Choose the new date you would like to offer first.");return;}
       if(!confirm(`Offer ${customerDateNZ(proposed)} as the new trip date? The customer will need to accept it.`)) return;
       const original=btn.textContent;btn.disabled=true;btn.textContent="Sending offer…";
-      try{
-        await manageBookingAction({action:"offer_reschedule",booking_id:btn.dataset.id,proposed_date:proposed,reason:"Weather, river, access, safety conditions or agreed date change"});
-        alert("New date offered. The customer can accept or decline it from My Trips.");
-        await loadGuideBookings();
-      }catch(err){alert(err.message||"The new date could not be offered.");btn.disabled=false;btn.textContent=original;}
+      try{await manageBookingAction({action:"offer_reschedule",booking_id:btn.dataset.id,proposed_date:proposed,reason:"Weather, river, access, safety conditions or agreed date change"});alert("New date offered. The customer can accept or decline it from My Trips.");await loadGuideBookings();}
+      catch(err){alert(err.message||"The new date could not be offered.");btn.disabled=false;btn.textContent=original;}
     }));
 
     container.querySelectorAll(".guide-full-refund").forEach(btn=>btn.addEventListener("click",async()=>{
-      const weather=btn.dataset.reason==="weather";
-      const message=weather
-        ?"Issue a 100% refund and cancel this booking because conditions are unsuitable? This cannot be undone."
-        :"Cancel this trip and issue the customer a 100% refund? This cannot be undone.";
+      const weather=btn.dataset.reason==="weather", message=weather?"Issue a 100% refund and cancel this booking because conditions are unsuitable? This cannot be undone.":"Cancel this trip and issue the customer a 100% refund? This cannot be undone.";
       if(!confirm(message)) return;
       const original=btn.textContent;btn.disabled=true;btn.textContent="Processing refund…";
-      try{
-        const result=await manageBookingAction({action:"guide_full_refund",booking_id:btn.dataset.id,reason:btn.dataset.reason});
-        alert(`Booking cancelled. A full refund of ${money(result.refund_amount_nzd)} has been submitted.`);
-        await loadGuideBookings();
-      }catch(err){alert(err.message||"The refund could not be processed.");btn.disabled=false;btn.textContent=original;}
+      try{const result=await manageBookingAction({action:"guide_full_refund",booking_id:btn.dataset.id,reason:btn.dataset.reason});alert(`Booking cancelled. A full refund of ${money(result.refund_amount_nzd)} has been submitted.`);await loadGuideBookings();}
+      catch(err){alert(err.message||"The refund could not be processed.");btn.disabled=false;btn.textContent=original;}
     }));
   }
 

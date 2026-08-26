@@ -257,6 +257,16 @@ textarea{min-height:105px;resize:vertical}
 .refund-amount{font-weight:900;color:var(--forest)}
 .reschedule-offer{padding:12px;border-radius:12px;background:#f6f1e7;margin-top:12px}
 
+
+.guide-photo-manager{margin-top:16px}
+.guide-photo-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}
+.guide-photo-slot{position:relative;aspect-ratio:1/1;border:1px dashed #c9cec9;border-radius:16px;overflow:hidden;background:#f7f8f6;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:12px}
+.guide-photo-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.guide-photo-remove{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:999px;border:0;background:rgba(20,28,23,.86);color:white;font-size:17px;line-height:1;cursor:pointer}
+.public-guide-gallery{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:18px}
+.public-guide-gallery img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px}
+@media(max-width:850px){.guide-photo-grid,.public-guide-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head>
 <body>
@@ -783,11 +793,21 @@ textarea{min-height:105px;resize:vertical}
               <button class="darkbtn" type="button" id="saveProfile">Save profile</button>
             </div>
             <div class="panel">
-              <div class="eyebrow">CONTACT & SOCIALS</div><h3>Your details</h3>
+              <div class="eyebrow">SOCIALS & PHOTOS</div><h3>Your public profile</h3>
+              <p style="color:var(--muted);margin-top:0">Your email address and phone number are kept private. They are only available to Kiwi Guides and customers with a confirmed booking.</p>
               <div class="social-grid">
                 <label>Instagram<input id="guideInstagram"></label><label>Facebook<input id="guideFacebook"></label>
                 <label>TikTok<input id="guideTiktok"></label><label>YouTube<input id="guideYoutube"></label>
-                <label>Website<input id="guideWebsite"></label><label>Contact email<input id="guideContactEmail" readonly></label>
+                <label>Website<input id="guideWebsite"></label>
+              </div>
+              <div class="guide-photo-manager">
+                <div class="eyebrow">PROFILE PHOTOS</div>
+                <h3 style="margin:4px 0 6px">Add up to 5 photos</h3>
+                <p style="color:var(--muted);font-size:13px;margin-top:0">Show customers who you are and what your guiding experience is like. These photos appear on your public guide profile.</p>
+                <div class="guide-photo-grid" id="guideProfilePhotoGrid"></div>
+                <input id="guideProfilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple style="display:none">
+                <button class="pill" type="button" id="chooseGuideProfilePhotos">+ Add photos</button>
+                <span id="guideProfilePhotoStatus" style="display:block;margin-top:8px;font-size:12px;color:var(--muted)"></span>
               </div>
             </div>
           </div>
@@ -1520,7 +1540,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     setPage("guide-profile");
     try{
       const {data:guide,error:guideErr}=await db.from("guides")
-        .select("id,display_name,business_name,bio,primary_region,website,instagram,facebook,tiktok,youtube")
+        .select("id,display_name,business_name,bio,primary_region,website,instagram,facebook,tiktok,youtube,guide_profile_photos(id,image_url,sort_order)")
         .eq("id",guideId).single();
       if(guideErr) throw guideErr;
 
@@ -1538,6 +1558,8 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
         guide.youtube&&`<span>YouTube: ${guide.youtube}</span>`
       ].filter(Boolean).join(" • ");
 
+      const profilePhotos=[...(guide.guide_profile_photos||[])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).slice(0,5);
+
       holder.innerHTML=`
         <div class="panel public-guide-card">
           <div class="public-guide-avatar">${(guide.display_name||guide.business_name||"KG").split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase()}</div>
@@ -1550,6 +1572,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
             ${socials ? `<p style="font-size:13px;color:var(--muted)">${socials}</p>` : ""}
           </div>
         </div>
+        ${profilePhotos.length ? `<div class="public-guide-gallery">${profilePhotos.map((p,i)=>`<img src="${p.image_url}" alt="Guide profile photo ${i+1}">`).join("")}</div>` : ""}
         <div class="section-head" style="margin-top:28px"><div><div class="eyebrow">ALL LISTINGS</div><h2>Trips with this guide</h2></div></div>
         <div class="cards">${mapped.length ? mapped.map(card).join("") : '<p>No approved listings are currently available.</p>'}</div>`;
     }catch(err){
@@ -2357,7 +2380,7 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#guideTiktok").value=guide.tiktok||"";
     document.querySelector("#guideYoutube").value=guide.youtube||"";
     document.querySelector("#guideWebsite").value=guide.website||"";
-    document.querySelector("#guideContactEmail").value=user.email||"";
+    await loadGuideProfilePhotos();
     document.querySelector("#loginBox").style.display="none";
     document.querySelector("#dashboard").classList.add("active");
     await loadGuideListings();
@@ -2410,6 +2433,80 @@ $("#guideNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#dashboard").classList.remove("active");
     document.querySelector("#loginBox").style.display="";
   });
+
+  let guideProfilePhotos=[];
+
+  async function loadGuideProfilePhotos(){
+    if(!currentGuide) return;
+    const {data,error}=await db.from("guide_profile_photos")
+      .select("id,image_url,storage_path,sort_order")
+      .eq("guide_id",currentGuide.id).order("sort_order",{ascending:true});
+    if(error){ console.warn("Profile photos could not be loaded:",error); return; }
+    guideProfilePhotos=data||[];
+    renderGuideProfilePhotoManager();
+  }
+
+  function renderGuideProfilePhotoManager(){
+    const grid=document.querySelector("#guideProfilePhotoGrid");
+    if(!grid) return;
+    const items=[];
+    for(let i=0;i<5;i++){
+      const photo=guideProfilePhotos.find(p=>Number(p.sort_order)===i);
+      items.push(photo
+        ? `<div class="guide-photo-slot"><img src="${photo.image_url}" alt="Guide profile photo ${i+1}"><button class="guide-photo-remove" type="button" data-photo-id="${photo.id}" data-storage-path="${photo.storage_path}" aria-label="Remove photo">×</button></div>`
+        : `<div class="guide-photo-slot">Photo ${i+1}</div>`);
+    }
+    grid.innerHTML=items.join("");
+    const status=document.querySelector("#guideProfilePhotoStatus");
+    if(status) status.textContent=`${guideProfilePhotos.length} of 5 photos added`;
+    document.querySelectorAll(".guide-photo-remove").forEach(btn=>btn.addEventListener("click",()=>removeGuideProfilePhoto(btn.dataset.photoId,btn.dataset.storagePath)));
+  }
+
+  async function removeGuideProfilePhoto(id,path){
+    if(!currentGuide || !confirm("Remove this profile photo?")) return;
+    try{
+      const {error:rowError}=await db.from("guide_profile_photos").delete().eq("id",id).eq("guide_id",currentGuide.id);
+      if(rowError) throw rowError;
+      if(path){ const {error:storageError}=await db.storage.from("guide-profile-photos").remove([path]); if(storageError) console.warn(storageError); }
+      await loadGuideProfilePhotos();
+    }catch(err){ console.error(err); alert("That photo could not be removed."); }
+  }
+
+  async function uploadGuideProfilePhotos(files){
+    if(!currentGuide) return;
+    const available=5-guideProfilePhotos.length;
+    const picked=[...files].slice(0,available);
+    if(!picked.length){ alert(available<=0 ? "You already have 5 profile photos. Remove one before adding another." : "Choose at least one photo."); return; }
+    const status=document.querySelector("#guideProfilePhotoStatus");
+    try{
+      if(status) status.textContent="Uploading photos…";
+      const used=new Set(guideProfilePhotos.map(p=>Number(p.sort_order)));
+      const free=[0,1,2,3,4].filter(i=>!used.has(i));
+      for(let n=0;n<picked.length;n++){
+        const file=picked[n];
+        if(file.size>10*1024*1024) throw new Error(`${file.name} is larger than 10 MB.`);
+        const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+        const sortOrder=free[n];
+        const path=`${currentGuide.id}/${crypto.randomUUID()}.${ext}`;
+        const {error:uploadError}=await db.storage.from("guide-profile-photos").upload(path,file,{upsert:false,contentType:file.type||undefined});
+        if(uploadError) throw uploadError;
+        const {data:pub}=db.storage.from("guide-profile-photos").getPublicUrl(path);
+        const {error:insertError}=await db.from("guide_profile_photos").insert({guide_id:currentGuide.id,image_url:pub.publicUrl,storage_path:path,sort_order:sortOrder});
+        if(insertError){ await db.storage.from("guide-profile-photos").remove([path]); throw insertError; }
+      }
+      document.querySelector("#guideProfilePhotoInput").value="";
+      await loadGuideProfilePhotos();
+      if(status) status.textContent=`${guideProfilePhotos.length} of 5 photos added`;
+    }catch(err){
+      console.error(err);
+      if(status) status.textContent="Upload needs attention.";
+      alert(err.message||"Your photos could not be uploaded.");
+      await loadGuideProfilePhotos();
+    }
+  }
+
+  document.querySelector("#chooseGuideProfilePhotos")?.addEventListener("click",()=>document.querySelector("#guideProfilePhotoInput")?.click());
+  document.querySelector("#guideProfilePhotoInput")?.addEventListener("change",e=>uploadGuideProfilePhotos(e.target.files));
 
   document.querySelector("#saveProfile")?.addEventListener("click",async()=>{
     if(!currentGuide) return;

@@ -1075,8 +1075,12 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
   margin-left:auto!important;
   margin-right:auto!important;
 }
+#page-home > .hero > .hero-actions{
+  justify-content:center!important;
+  width:100%!important;
+}
 #page-home > .section:nth-of-type(2) > .section-head p{
-  text-align:center!important;
+  text-align:left!important;
   width:100%!important;
 }
 </style>
@@ -1120,9 +1124,6 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 <button class="hotspot" data-region="Southland" style="left:21%;top:85%;width:11%;height:3.2%"></button>
 </div>
 <div class="map-results" id="mapResults" style="display:none"></div>
-</div>
-<div class="region-picker">
-<div class="region-picker-title">Select by region</div>
 </div>
 </section>
 <section class="section">
@@ -2629,14 +2630,15 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     bookingCalendarDate=new Date(bookingCalendarDate.getFullYear(),bookingCalendarDate.getMonth(),1);
     document.querySelector("#bookingTripName").textContent=t.title+(currentRequestMode?" • Request to Book":" • Instant Book");
     updateBookingModeUI(t);
-    if(!t.isDemo) {
-      try { await loadAvailability(t.backendId,bookingCalendarDate); }
-      catch(err) { console.error(err); }
-    }
     renderBookingCalendar();
     document.querySelectorAll(".booking-step").forEach(x=>x.classList.remove("active"));
     document.querySelector("#bookStep1").classList.add("active");
     setPage("booking");
+    if(!t.isDemo) {
+      try { await loadAvailability(t.backendId,bookingCalendarDate); }
+      catch(err) { console.error(err); }
+      renderBookingCalendar();
+    }
   };
 
   document.querySelector("#bookingPrevMonth")?.addEventListener("click",async()=>{

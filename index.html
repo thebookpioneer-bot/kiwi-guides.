@@ -3960,6 +3960,17 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     request:"Request to Book",
     both:"Instant Book + Request to Book"
   }[mode] || "Request to Book");
+  const customerDateNZ = dateStr => {
+    if(!dateStr) return "Date not set";
+    const source = String(dateStr);
+    const date = new Date(source.includes("T") ? source : `${source}T12:00:00`);
+    if(Number.isNaN(date.getTime())) return "Date not set";
+    return new Intl.DateTimeFormat("en-NZ",{
+      day:"numeric",
+      month:"long",
+      year:"numeric"
+    }).format(date);
+  };
 
   async function getMyProfile() {
     const { data: authData } = await db.auth.getUser();

@@ -1062,8 +1062,22 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 <style id="untamed-home-heading-size-tweak">
 /* Slightly reduce the three large Home page headings on phones. */
 @media(max-width:620px){
+  #page-home > .hero{padding-top:24px!important;}
   #page-home > .hero > h1{font-size:28px!important;line-height:1.02!important;}
   #page-home > .section > .section-head h2{font-size:26px!important;line-height:1.05!important;}
+  #page-home > .section:nth-of-type(2) > .section-head h2{font-size:20px!important;white-space:nowrap!important;letter-spacing:-.035em!important;}
+}
+#page-home > .section:nth-of-type(2) > .section-head,
+#page-home > .section:nth-of-type(2) > .section-head > div{
+  width:100%!important;
+}
+#page-home #untamedHomeSearch{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+#page-home > .section:nth-of-type(2) > .section-head p{
+  text-align:center!important;
+  width:100%!important;
 }
 </style>
 </head>
@@ -1079,7 +1093,7 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 <main>
 <section class="page active" id="page-home">
 <section class="hero">
-<h1>UNFORGETTABLE GUIDED TRIPS ACROSS NEW ZEALAND</h1>
+<h1>UNFORGETTABLE GUIDED TRIPS ACROSS<br/><span style="white-space:nowrap">NEW ZEALAND</span></h1>
 <p class="untamed-home-blurb">Discover New Zealand at its wildest with unforgettable guided fly fishing, hunting and backcountry adventures. From trophy trout and remote hunts to helicopter accessed wilderness, choose from day trips, multi day expeditions and experiences far beyond the beaten track. Find your guide and start your adventure today.</p>
 <div class="hero-actions"><button class="primary" data-page="explore">Explore trips</button><button class="outline" data-page="guides">For guides</button></div>
 </section>
@@ -2299,7 +2313,6 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   }
 
   function renderWishlistHeart(t){
-    if(t.isDemo || !isLiveListingId(t.id)) return '';
     const saved=customerWishlistIds.has(String(t.id));
     return `<button class="kg-card-heart${saved?' saved':''}" type="button" aria-label="${saved?'Remove from':'Save to'} Wishlist" onclick="event.stopPropagation();window.toggleUntamedWishlist('${String(t.id)}')">${saved?'♥':'♡'}</button>`;
   }
@@ -2332,6 +2345,9 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       refreshPublicViews();
       return;
     }
+    try{
+      JSON.parse(localStorage.getItem("untamed_demo_wishlist")||"[]").forEach(id=>customerWishlistIds.add(String(id)));
+    }catch(_err){}
     const {data,error}=await db.from("customer_wishlist").select("listing_id").eq("customer_user_id",user.id);
     if(error){ console.warn("Wishlist could not be loaded:",error); return; }
     (data||[]).forEach(x=>customerWishlistIds.add(String(x.listing_id)));
@@ -2357,6 +2373,15 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     }
     const id=String(listingId);
     const isSaved=customerWishlistIds.has(id);
+    const listing=trips.find(t=>String(t.id)===id);
+    if(!listing || listing.isDemo || !isLiveListingId(listing.id)){
+      if(isSaved) customerWishlistIds.delete(id); else customerWishlistIds.add(id);
+      const demoIds=trips.filter(t=>(t.isDemo||!isLiveListingId(t.id))&&customerWishlistIds.has(String(t.id))).map(t=>String(t.id));
+      localStorage.setItem("untamed_demo_wishlist",JSON.stringify(demoIds));
+      refreshPublicViews();
+      renderCustomerWishlist();
+      return;
+    }
     try{
       if(isSaved){
         const {error}=await db.from("customer_wishlist").delete().eq("customer_user_id",user.id).eq("listing_id",id);

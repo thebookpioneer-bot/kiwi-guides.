@@ -2090,6 +2090,10 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FDNd8-XEA_eATDDzhIKXcA_28j4H5Vu";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
   window.kiwiDb = db;
+  window.untamedBackendConfig = Object.freeze({
+    url: SUPABASE_URL,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY
+  });
 
   let currentCustomerUser = null;
   let customerSelectedRatings = {};
@@ -3939,6 +3943,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     }
   });
 
+  window.loadUntamedApprovedListings = loadApprovedListings;
   loadApprovedListings();
 })();
 </script>
@@ -3947,6 +3952,14 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
 (() => {
   const db = window.kiwiDb;
   if(!db) return;
+  const backendConfig = window.untamedBackendConfig || {};
+  const SUPABASE_URL = backendConfig.url;
+  const SUPABASE_PUBLISHABLE_KEY = backendConfig.publishableKey;
+  const modeLabel = mode => ({
+    instant:"Instant Book",
+    request:"Request to Book",
+    both:"Instant Book + Request to Book"
+  }[mode] || "Request to Book");
 
   async function getMyProfile() {
     const { data: authData } = await db.auth.getUser();
@@ -4418,6 +4431,9 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       const { data: sessionData } = await db.auth.getSession();
       const token = sessionData?.session?.access_token;
       if(!token) throw new Error("Please sign in as the owner.");
+      if(!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+        throw new Error("The Untamed connection could not be loaded. Refresh the page and try again.");
+      }
       const response = await fetch(`${SUPABASE_URL}/functions/v1/review-listing`,{
         method:"POST",
         headers:{
@@ -4430,7 +4446,9 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       const result = await response.json();
       if(!response.ok) throw new Error(result.error || "That listing could not be updated.");
       await loadOwnerDashboard();
-      if(typeof loadApprovedListings === "function") await loadApprovedListings();
+      if(typeof window.loadUntamedApprovedListings === "function") {
+        await window.loadUntamedApprovedListings();
+      }
       if(status === "approved") {
         alert(result.email_status === "sent"
           ? "Listing approved and now live. The guide has been emailed."

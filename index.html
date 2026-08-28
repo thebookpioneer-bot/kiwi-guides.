@@ -1024,6 +1024,7 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 </style>
 <style id="untamed-booking-inbox-style">
 .untamed-inbox-panel{margin-top:16px}
+#customerBookingsPanel{margin-top:16px}
 .untamed-inbox-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
 .untamed-unread-badge,.untamed-tab-badge{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#143328;color:#fff;font-size:11px;font-weight:900}
 .untamed-tab-badge{min-width:20px;height:20px;margin-left:5px;background:#b98231}
@@ -1057,6 +1058,13 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 .kg-compact-divider{width:66px;height:3px;background:#c6ba79;margin:13px 0 12px;border-radius:3px}
 .kg-compact-bottom{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap}.kg-compact-bottom strong{font-size:18px}.kg-compact-bottom span{font-weight:800;white-space:nowrap}
 @media(max-width:620px){.kg-compact-card .kg-card-photo{height:255px!important}.kg-compact-card .kg-compact-copy h3{font-size:21px!important}.kg-compact-bottom strong{font-size:16px}}
+</style>
+<style id="untamed-home-heading-size-tweak">
+/* Slightly reduce the three large Home page headings on phones. */
+@media(max-width:620px){
+  #page-home > .hero > h1{font-size:28px!important;line-height:1.02!important;}
+  #page-home > .section > .section-head h2{font-size:26px!important;line-height:1.05!important;}
+}
 </style>
 </head>
 <body>
@@ -1189,14 +1197,12 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 <p style="color:var(--muted);line-height:1.75">
         A booking is only confirmed once the applicable booking process has been completed. For Instant Book trips this includes successful payment. For Request to Book trips, the guide must first accept the request and any required payment must then be completed.
       </p>
-<div class="booking-policy-box" style="margin:18px 0">
 <h3 style="margin-top:0">Cancellation, refunds &amp; date changes</h3>
 <p><strong>Untamed payment &amp; cancellation policy:</strong> A 20% non-refundable deposit is required at the time of booking. The remaining 80% balance is due 30 days before the trip. Bookings made within 30 days of the trip require full payment at the time of booking. If the guest cancels more than 30 days before the trip, the 20% deposit is retained and no further payment is required. If the guest cancels within 30 days of the trip, payments are non-refundable. If the guide cancels, the guest will receive a full refund. For cancellations caused by weather, river conditions, access closures, or other circumstances outside the guest’s or guide’s control, the guide may offer a rescheduled date or trip credit, with any refund handled according to the circumstances.</p>
 <p><strong>No shows:</strong> If the customer does not attend the booked experience, no refund is provided.</p>
 <p><strong>Weather, river, access or safety conditions:</strong> If the guide decides conditions are unsuitable or unsafe, the guide and customer may agree to move the booking to another suitable date, or the guide may approve a full refund.</p>
 <p><strong>Guide cancellation:</strong> If the guide cancels the experience and a new date is not agreed, the customer receives a full refund.</p>
 <p>Any rights that apply under New Zealand law continue to apply.</p>
-</div>
 <p style="color:var(--muted);line-height:1.75">
         Outdoor activities such as hunting, fishing and back country travel carry inherent risks. Customers participate at their own risk and must follow all safety instructions provided by their guide.
       </p>
@@ -1369,7 +1375,7 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
   <div class="untamed-inbox-head"><div><div class="eyebrow">INBOX</div><h3 style="margin:4px 0">Messages</h3><p style="color:var(--muted);margin:0">Message your guide privately about a booking.</p></div><span class="untamed-unread-badge" id="customerInboxUnread" hidden>0</span></div>
   <div id="customerInboxContainer"><p style="color:var(--muted)">Loading messages…</p></div>
 </div>
-<div class="panel">
+<div class="panel" id="customerBookingsPanel">
 <div class="eyebrow">YOUR BOOKINGS</div>
 <h3>Bookings</h3>
 <div id="customerBookingsContainer"><p style="color:var(--muted)">Loading your bookings…</p></div>
@@ -3985,6 +3991,41 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
             <button class="pill owner-reject-listing" type="button" data-id="${l.id}">Reject</button>
           </div>
         </div>`).join("") : '<p style="color:var(--muted)">No pending listings.</p>';
+
+      // Bind these controls immediately after rendering them. This keeps the
+      // owner review buttons working even if a later dashboard section fails to load.
+      listBox.onclick = async (event) => {
+        const btn = event.target.closest("button[data-id]");
+        if(!btn || !listBox.contains(btn)) return;
+        const id = btn.dataset.id;
+        if(!id) return;
+
+        if(btn.classList.contains("owner-view-listing")) {
+          event.preventDefault();
+          await openOwnerListingReview(id);
+          return;
+        }
+
+        if(btn.classList.contains("owner-approve-listing")) {
+          event.preventDefault();
+          const original = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Approving…";
+          const ok = await reviewListing(id,"approved");
+          if(!ok) { btn.disabled = false; btn.textContent = original; }
+          return;
+        }
+
+        if(btn.classList.contains("owner-reject-listing")) {
+          event.preventDefault();
+          if(!confirm("Reject this listing?")) return;
+          const original = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = "Rejecting…";
+          const ok = await reviewListing(id,"rejected");
+          if(!ok) { btn.disabled = false; btn.textContent = original; }
+        }
+      };
     }
 
     // ---- Build listing and guide lookup maps separately ----
@@ -4109,19 +4150,6 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
 
     document.querySelectorAll(".owner-review-app").forEach(btn =>
       btn.addEventListener("click",()=>openApplicationReview(btn.dataset.id))
-    );
-    document.querySelectorAll(".owner-view-listing").forEach(btn =>
-      btn.addEventListener("click",()=>openOwnerListingReview(btn.dataset.id))
-    );
-    document.querySelectorAll(".owner-approve-listing").forEach(btn =>
-      btn.addEventListener("click",async()=>{
-        const original=btn.textContent; btn.disabled=true; btn.textContent="Approving…";
-        const ok=await reviewListing(btn.dataset.id,"approved");
-        if(!ok){btn.disabled=false;btn.textContent=original;}
-      })
-    );
-    document.querySelectorAll(".owner-reject-listing").forEach(btn =>
-      btn.addEventListener("click",()=>reviewListing(btn.dataset.id,"rejected"))
     );
   }
 

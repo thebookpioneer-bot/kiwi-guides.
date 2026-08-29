@@ -1097,9 +1097,9 @@ button{
 }
 
 /* Centre the guide entry choices and the application submit action. */
-#page-guides .tabs{
-  justify-content:center !important;
-}
+.guide-entry-actions{padding-top:18px!important;padding-bottom:14px!important}
+.guide-entry-buttons{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.guide-entry-buttons button{min-width:150px}
 #applyForm > button[type="submit"]{
   display:block !important;
   margin:16px auto 0 !important;
@@ -1128,21 +1128,14 @@ button{
 .untamed-message-toast-icon{position:relative;display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:#fff;color:#143328}
 .untamed-message-toast-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .untamed-message-toast-copy{min-width:0}.untamed-message-toast-copy strong,.untamed-message-toast-copy small{display:block}.untamed-message-toast-copy small{margin-top:3px;color:#dce8e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.guide-mobile-nav{display:none}
-body.guide-session-active .bottom-nav{display:none!important}
-body.guide-session-active .app{padding-bottom:92px}
-body.guide-session-active .guide-dashboard-shell{padding-bottom:94px}
-body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:65;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));background:rgba(16,39,31,.98);border-top:1px solid #284a3c;backdrop-filter:blur(14px)}
-.guide-mobile-nav button{position:relative;min-width:0;border:0;background:transparent;color:#c8d0c8;padding:6px 2px;font-size:11px;font-weight:900;cursor:pointer}
-.guide-mobile-nav button.active{background:#fff;color:#143328}
-.guide-mobile-nav button.has-unread{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.45)}
-.guide-mobile-nav svg{display:block;width:22px;height:22px;margin:0 auto 4px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.guide-mobile-nav .untamed-app-badge{top:0;right:calc(50% - 24px);border-color:#143328}
+.bottom-nav [data-page="guides"]{position:relative}
+.bottom-nav [data-page="guides"] .untamed-app-badge{top:1px;right:calc(50% - 34px);border-color:#143328}
 @media(max-width:760px){
   .untamed-notification-controls{align-items:stretch;flex-direction:column}
   .untamed-notification-controls button{width:100%}
   .guide-header-inbox-btn .guide-header-inbox-label{display:none}
-  .guide-mobile-nav button{font-size:9px}
+  .guide-entry-actions{padding-top:12px!important;padding-bottom:10px!important}
+  .guide-entry-buttons button{flex:1;min-width:0}
 }
 </style>
 <style id="untamed-featured-listing-carousel">
@@ -1666,6 +1659,12 @@ body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom
 </section>
 </section>
 <section class="page" id="page-guides">
+<section aria-label="Guide account options" class="section guide-entry-actions">
+<div class="guide-entry-buttons">
+<button class="primary" data-page="guide-apply" type="button">Apply to join</button>
+<button class="darkbtn" data-page="guide-login" type="button">Guide log in</button>
+</div>
+</section>
 <section class="hero">
 <div class="eyebrow" style="color:#d5e1d8">FOR NEW ZEALAND GUIDES</div>
 <h1>Put your guiding business in front of more travellers.</h1>
@@ -1681,9 +1680,10 @@ body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom
 </ul>
 </section>
 <section class="section"><div class="fee-box"><div class="fee-big"><div><strong>9% + GST</strong><span>one off fee per booking</span></div></div><div><h2>No added fees.</h2><p>Untamed charges one booking fee of 9% + GST. There are no extra listing or platform fees added on top.</p></div></div></section>
+</section>
+<section class="page" id="page-guide-apply">
+<div class="routebar"><button data-page="guides" type="button">← Back to Guides</button><span>/</span><span>Apply to join</span></div>
 <section class="section">
-<div class="tabs"><button class="tab active" data-tab="apply">Apply to join</button><button class="tab" data-tab="login">Guide log in</button></div>
-<div class="tab-panel active" id="tab-apply">
 <div class="two-col">
 <div class="panel"><h3>New guide application</h3>
 <form id="applyForm">
@@ -1712,9 +1712,21 @@ body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom
 <div class="panel"><h3>What happens next?</h3><div class="notice">Application submitted → Untamed reviews your details → approved guide account activated → your account is now public and you can go in and make changes → add new listings.</div></div>
 </div>
 </div>
-<div class="tab-panel" id="tab-login">
-<div class="two-col" id="loginBox"><div class="panel"><h3>Guide log in</h3><form id="loginForm"><label>Email<input autocomplete="email" id="guideLoginEmail" required="" type="email"/></label><label>Password<input autocomplete="current-password" id="guideLoginPassword" required="" type="password"/></label><button class="darkbtn" type="submit">Log in</button><button class="auth-forgot" data-forgot-email-source="guideLoginEmail" type="button">Forgot password?</button></form></div><div class="panel"><h3>Guide account</h3><p>Manage your profile, social links, availability, photos and multiple listings.</p></div></div>
-<div class="dashboard" id="dashboard">
+</section>
+</section>
+<section class="page" id="page-guide-login">
+<div class="routebar"><button data-page="guides" type="button">← Back to Guides</button><span>/</span><span>Guide log in</span></div>
+<section class="section">
+<div class="panel" id="loginBox" style="max-width:520px;margin:20px auto">
+<div class="eyebrow">GUIDE ACCOUNT</div>
+<h2>Guide log in</h2>
+<p style="color:var(--muted)">Log in to manage your dashboard, bookings, listings, messages and profile.</p>
+<form id="loginForm"><label>Email<input autocomplete="email" id="guideLoginEmail" required="" type="email"/></label><label>Password<input autocomplete="current-password" id="guideLoginPassword" required="" type="password"/></label><button class="darkbtn" style="width:100%" type="submit">Log in</button><button class="auth-forgot" data-forgot-email-source="guideLoginEmail" type="button">Forgot password?</button></form>
+</div>
+</section>
+</section>
+<section class="page" id="page-guide-dashboard">
+<div class="dashboard active" id="dashboard">
 <div class="guide-dashboard-shell">
 <div class="guide-dashboard-header">
 <div>
@@ -1904,8 +1916,7 @@ body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom
 </main>
 </div>
 </div>
-</div> </div>
-</section>
+</div>
 </section>
 <section class="page" id="page-owner-login">
 <section class="section">
@@ -1977,15 +1988,8 @@ body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom
 <button class="bottom active" data-page="home">Home</button>
 <button class="bottom" data-page="explore">Explore</button>
 <button class="bottom" data-page="customer">My Trips</button>
-<button class="bottom" data-page="guides">Guides</button>
+<button class="bottom" data-page="guides">Guides<span class="untamed-app-badge" id="guideBottomInboxBadge" hidden>0</span></button>
 <button class="bottom" data-page="contact">About Us</button>
-</nav>
-<nav aria-label="Guide app" class="guide-mobile-nav" id="guideMobileNav">
-<button aria-current="page" class="active" data-guide-mobile-tab="dashboard" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"></path><path d="M5 10v10h14V10"></path></svg><span>Dashboard</span></button>
-<button data-guide-mobile-tab="bookings" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg><span>Bookings</span></button>
-<button data-guide-mobile-tab="listings" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v15H4z"></path><path d="M8 9h8M8 13h8M8 17h5"></path></svg><span>Listings</span></button>
-<button data-guide-mobile-tab="inbox" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5Z"></path><path d="m5 7 7 5 7-5"></path></svg><span>Inbox</span><span class="untamed-app-badge" id="guideMobileInboxBadge" hidden>0</span></button>
-<button data-guide-mobile-tab="profile" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg><span>Profile</span></button>
 </nav>
 </div>
 <div class="modal" id="modal"><div class="modal-card"><button class="close" id="close">×</button><div id="modalContent"></div></div></div>
@@ -2022,7 +2026,8 @@ function showPage(id, push=true){
   $$(".page").forEach(p=>p.classList.remove("active"));
   const page=$("#page-"+id);
   if(page) page.classList.add("active");
-  $$(".navbtn,.bottom").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
+  const navPage=id.startsWith("guide-")?"guides":id;
+  $$(".navbtn,.bottom").forEach(b=>b.classList.toggle("active",b.dataset.page===navPage));
   if(push){
     if(routeHistory[routeHistory.length-1]!==id) routeHistory.push(id);
     history.pushState({page:id},"","#"+id);
@@ -2032,7 +2037,14 @@ function showPage(id, push=true){
 
 function setPage(id){showPage(id,true)}
 
-$$("[data-page]").forEach(b=>b.addEventListener("click",()=>setPage(b.dataset.page)));
+$$("[data-page]").forEach(b=>b.addEventListener("click",()=>{
+  const requested=b.dataset.page;
+  if(requested==="guides"&&window.__untamedGuideActive&&window.openUntamedGuideTab){
+    window.openUntamedGuideTab("dashboard");
+    return;
+  }
+  setPage(requested);
+}));
 $$("[data-back]").forEach(b=>b.addEventListener("click",()=>{
   if(routeHistory.length>1){
     routeHistory.pop();
@@ -2048,6 +2060,8 @@ window.addEventListener("popstate",()=>{
   const id=(location.hash||"#home").slice(1);
   if($("#page-"+id)) showPage(id,false);
 });
+const initialGuideRoute=(location.hash||"").slice(1);
+if(["guide-apply","guide-login"].includes(initialGuideRoute)) showPage(initialGuideRoute,false);
 function card(t){return `<article class="card"><div class="photo" style="background-image:url('${t.photo}')"><span class="tag">${t.location}</span></div><div class="card-body"><div class="meta"><span>${t.type}</span><span>${t.mode}</span></div><h3>${t.title}</h3><p>${threeSentencePreview(t.desc)}</p><div class="chips">${t.features.map(x=>`<span class="chip">${x}</span>`).join("")}</div><div class="card-foot"><div class="price"><strong>${new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(t.price)}</strong></div><button class="darkbtn" onclick="openTrip(${t.id})">View guide</button></div></div></article>`}
 function homeCarouselViewMore(){return `<button class="untamed-carousel-more" type="button" onclick="setPage('explore')" aria-label="View more listings"><span>Keep exploring</span><strong>View all listings <span aria-hidden="true">→</span></strong></button>`}
 function renderHomeCarousel(){
@@ -3928,7 +3942,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     }
   });
 
-  async function loadGuideDashboard(user) {
+  async function loadGuideDashboard(user,{navigate=false}={}) {
     const {data:guide,error}=await db.from("guides").select("*").eq("user_id",user.id).maybeSingle();
     if(error) throw error;
     if(!guide) {
@@ -3947,14 +3961,16 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     document.querySelector("#guideWebsite").value=guide.website||"";
     await loadGuideProfilePhotos();
     await loadGuideBankDetails();
-    document.querySelector("#loginBox").style.display="none";
     document.querySelector("#dashboard").classList.add("active");
     document.body.classList.add("guide-session-active");
+    window.__untamedGuideActive=true;
+    if(navigate) showPage("guide-dashboard",true);
+    else if(guidePageFromHash()) showPage("guide-dashboard",false);
     await loadGuideListings();
     try { await loadGuideBookings(); } catch(err) { console.warn("Guide bookings could not be loaded:",err); }
     try { await refreshGuideDashboardStats(); } catch(err) { console.warn("Guide dashboard summary could not be refreshed:",err); }
     try { await window.loadUntamedGuideInbox?.(); } catch(err) { console.warn("Guide inbox could not be refreshed:",err); }
-    switchGuideDashboardTab(guidePageFromHash()||"dashboard",{push:false,scroll:false});
+    switchGuideDashboardTab(navigate?"dashboard":(guidePageFromHash()||"dashboard"),{push:false,scroll:false});
   }
 
   async function linkGuideApplicationSession(session){
@@ -3995,16 +4011,18 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       // Authentication succeeded. Dashboard loading is handled separately so a
       // secondary data error cannot incorrectly tell the guide their login failed.
       try {
-        await loadGuideDashboard(data.user);
+        await loadGuideDashboard(data.user,{navigate:true});
       } catch(dashboardErr) {
         console.warn("Guide authenticated; dashboard refresh issue:",dashboardErr);
         const {data:guide}=await db.from("guides").select("*").eq("user_id",data.user.id).maybeSingle();
         if(guide){
           currentGuide=guide;
           currentGuideUser=data.user;
-          document.querySelector("#loginBox").style.display="none";
           document.querySelector("#dashboard").classList.add("active");
           document.body.classList.add("guide-session-active");
+          window.__untamedGuideActive=true;
+          showPage("guide-dashboard",true);
+          switchGuideDashboardTab("dashboard",{push:false,scroll:false});
           try { await loadGuideListings(); } catch(e) { console.warn(e); }
           try { await loadGuideBookings(); } catch(e) { console.warn(e); }
         } else {
@@ -4023,8 +4041,9 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     await db.auth.signOut();
     currentGuide=null; currentGuideUser=null;
     document.querySelector("#dashboard").classList.remove("active");
-    document.querySelector("#loginBox").style.display="";
     document.body.classList.remove("guide-session-active");
+    window.__untamedGuideActive=false;
+    showPage("guide-login",true);
   });
 
   let guideProfilePhotos=[];
@@ -4323,11 +4342,6 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       panel.classList.toggle("active",active);
       panel.hidden=!active;
     });
-    document.querySelectorAll("[data-guide-mobile-tab]").forEach(button=>{
-      const active=button.dataset.guideMobileTab===page;
-      button.classList.toggle("active",active);
-      if(active) button.setAttribute("aria-current","page"); else button.removeAttribute("aria-current");
-    });
     if(push&&location.hash!==`#guide-${page}`) history.pushState({guidePage:page},"",`#guide-${page}`);
     if(page==="bookings") loadGuideBookings().catch(err=>console.warn("Guide bookings could not be refreshed:",err));
     if(page==="listings") loadGuideListings().catch(err=>console.warn("Guide listings could not be refreshed:",err));
@@ -4340,18 +4354,16 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   }
   function openGuideDashboardTab(tab){
     if(!currentGuide) return;
-    if(!document.querySelector("#page-guides")?.classList.contains("active")) showPage("guides",false);
-    document.querySelector('#page-guides .tab[data-tab="login"]')?.click();
+    if(!document.querySelector("#page-guide-dashboard")?.classList.contains("active")) showPage("guide-dashboard",false);
     switchGuideDashboardTab(tab);
   }
   window.openUntamedGuideTab=openGuideDashboardTab;
   document.querySelectorAll("[data-guide-tab]").forEach(el=>el.addEventListener("click",()=>{ if(el.dataset.guideTab) openGuideDashboardTab(el.dataset.guideTab); }));
   document.querySelector("#guideHeaderInbox")?.addEventListener("click",()=>openGuideDashboardTab("inbox"));
-  document.querySelectorAll("[data-guide-mobile-tab]").forEach(el=>el.addEventListener("click",()=>openGuideDashboardTab(el.dataset.guideMobileTab)));
   document.querySelector("#dashboardAddListing")?.addEventListener("click",()=>{ switchGuideDashboardTab("listings"); openNewListing(); });
   window.addEventListener("popstate",()=>{
     const page=guidePageFromHash();
-    if(page&&currentGuide){showPage("guides",false);switchGuideDashboardTab(page,{push:false});}
+    if(page&&currentGuide){showPage("guide-dashboard",false);switchGuideDashboardTab(page,{push:false});}
   });
 
   async function refreshGuideDashboardStats(){
@@ -4590,6 +4602,8 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     if(data?.session?.user) {
       await linkGuideApplicationSession(data.session);
       try { await loadGuideDashboard(data.session.user); } catch(_) {}
+    } else if(/^#guide-(dashboard|bookings|listings|inbox|profile)$/.test(location.hash||"")) {
+      showPage("guide-login",false);
     }
   });
 
@@ -5241,8 +5255,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   });
   const backPastBtn=document.querySelector("#backToGuideBookings");
   if(backPastBtn) backPastBtn.addEventListener("click",()=>{
-    showPage("guides",true);
-    setTimeout(()=>{document.querySelector('[data-guide-tab="bookings"]')?.click();},0);
+    window.openUntamedGuideTab?.("bookings");
   });
   const pastName=document.querySelector("#guidePastNameSearch");
   const pastDate=document.querySelector("#guidePastDateSearch");
@@ -5705,7 +5718,7 @@ window.addEventListener("hashchange", () => {
     const count=Math.max(0,Number(unread)||0);
     const dashboardCount=document.getElementById("guideDashboardUnreadCount");
     if(dashboardCount) dashboardCount.textContent=String(count);
-    ["guideInboxUnread","guideInboxNavBadge","guideHeaderInboxBadge","guideMobileInboxBadge"].forEach(id=>{
+    ["guideInboxUnread","guideInboxNavBadge","guideHeaderInboxBadge","guideBottomInboxBadge"].forEach(id=>{
       const el=document.getElementById(id);
       if(el){el.textContent=String(count);el.hidden=!count;el.closest("button")?.classList.toggle("has-unread",!!count);}
     });
@@ -5948,7 +5961,7 @@ window.addEventListener("hashchange", () => {
   updateNotificationControls();
 
   db.auth.onAuthStateChange((_event,session)=>setTimeout(()=>{
-    if(!session?.user){document.body.classList.remove("guide-session-active");updateGuideBadges(0);stopGuideRealtime();}
+    if(!session?.user){document.body.classList.remove("guide-session-active");window.__untamedGuideActive=false;updateGuideBadges(0);stopGuideRealtime();}
     loadCustomerInbox().catch(()=>{});
     loadGuideInbox().catch(()=>{});
   },200));

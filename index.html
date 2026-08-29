@@ -98,6 +98,9 @@ a{color:inherit;text-decoration:none}
 .field label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}
 input,select,textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px 13px;color:var(--ink)}
 textarea{min-height:105px;resize:vertical}
+.auth-forgot{appearance:none;border:0;background:transparent;color:var(--forest);font-weight:900;text-decoration:underline;text-underline-offset:3px;padding:10px 0 2px;cursor:pointer;font-size:13px}
+.auth-forgot:hover,.auth-forgot:focus-visible{color:var(--forest2)}
+.auth-help{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0 0}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .panel{border:1px solid var(--line);border-radius:20px;padding:18px;background:#fff}
@@ -1617,6 +1620,7 @@ button{
 <label>Email<input autocomplete="email" id="customerLoginEmail" required="" type="email"/></label>
 <label>Password<input autocomplete="current-password" id="customerLoginPassword" required="" type="password"/></label>
 <button class="darkbtn" style="width:100%" type="submit">Log in</button>
+<button class="auth-forgot" data-forgot-email-source="customerLoginEmail" type="button">Forgot password?</button>
 </form>
 </div>
 <div class="panel">
@@ -1682,7 +1686,7 @@ button{
 <div class="two-col">
 <div class="panel"><h3>New guide application</h3>
 <form id="applyForm">
-<div class="form-grid"><label>Guide name<input id="applyGuideName" name="guide_name" required=""/></label><label>Business name<input id="applyBusinessName" name="business_name" required=""/></label><label>Email<input id="applyEmail" name="email" required="" type="email"/></label><label>Phone<input id="applyPhone" name="phone" required=""/></label></div>
+<div class="form-grid"><label>Guide name<input id="applyGuideName" name="guide_name" required=""/></label><label>Business name<input id="applyBusinessName" name="business_name" required=""/></label><label>Email<input autocomplete="email" id="applyEmail" name="email" required="" spellcheck="false" type="email"/></label><label>Confirm email<input autocomplete="email" id="applyEmailConfirm" name="email_confirm" required="" spellcheck="false" type="email"/></label><label>Phone<input id="applyPhone" name="phone" required=""/></label></div>
 <label>Years guiding<input id="applyYears" min="0" name="years_guiding" required="" type="number"/></label>
 <label>Guiding experience<textarea id="applyExperience" name="experience" placeholder="Tell us about your guiding experience, areas, species and background." required=""></textarea></label>
 <label>Qualifications / licences<textarea id="applyQualifications" name="qualifications" placeholder="First aid, firearms licence, outdoor qualifications, etc."></textarea></label>
@@ -1696,7 +1700,10 @@ button{
 <label>Primary region<input id="applyPrimaryRegion" placeholder="e.g. Bay of Plenty" required=""/></label>
 <label>Main activity<input id="applyMainActivity" placeholder="e.g. Fly fishing" required=""/></label>
 </div>
+<div class="form-grid">
 <label>Create your guide login password<input autocomplete="new-password" id="applyPassword" minlength="8" placeholder="At least 8 characters" required="" type="password"/></label>
+<label>Confirm password<input autocomplete="new-password" id="applyPasswordConfirm" minlength="8" placeholder="Enter the same password again" required="" type="password"/></label>
+</div>
 <div class="notice">Submitting creates your guide login and sends your application for review. Your profile will not appear publicly until Untamed approves it.</div>
 <button class="primary" style="margin-top:16px" type="submit">Submit for review</button>
 </form>
@@ -1705,7 +1712,7 @@ button{
 </div>
 </div>
 <div class="tab-panel" id="tab-login">
-<div class="two-col" id="loginBox"><div class="panel"><h3>Guide log in</h3><form id="loginForm"><label>Email<input autocomplete="email" id="guideLoginEmail" required="" type="email"/></label><label>Password<input autocomplete="current-password" id="guideLoginPassword" required="" type="password"/></label><button class="darkbtn" type="submit">Log in</button></form></div><div class="panel"><h3>Guide account</h3><p>Manage your profile, social links, availability, photos and multiple listings.</p></div></div>
+<div class="two-col" id="loginBox"><div class="panel"><h3>Guide log in</h3><form id="loginForm"><label>Email<input autocomplete="email" id="guideLoginEmail" required="" type="email"/></label><label>Password<input autocomplete="current-password" id="guideLoginPassword" required="" type="password"/></label><button class="darkbtn" type="submit">Log in</button><button class="auth-forgot" data-forgot-email-source="guideLoginEmail" type="button">Forgot password?</button></form></div><div class="panel"><h3>Guide account</h3><p>Manage your profile, social links, availability, photos and multiple listings.</p></div></div>
 <div class="dashboard" id="dashboard">
 <div class="guide-dashboard-shell">
 <div class="guide-dashboard-header">
@@ -1920,6 +1927,7 @@ button{
           <input autocomplete="current-password" id="ownerLoginPassword" required="" type="password"/>
 </label>
 <button class="primary" style="width:100%" type="submit">Owner Login</button>
+<button class="auth-forgot" data-forgot-email-source="ownerLoginEmail" type="button">Forgot password?</button>
 <button class="pill" id="createOwnerAccount" style="width:100%;margin-top:8px" type="button">Create Owner Account</button>
 </form>
 <p id="ownerLoginMessage" style="margin-top:12px;color:var(--muted);font-size:13px"></p>
@@ -2470,6 +2478,109 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     url: SUPABASE_URL,
     publishableKey: SUPABASE_PUBLISHABLE_KEY
   });
+
+  function showAuthModal(html){
+    const modal=document.querySelector("#modal");
+    const content=document.querySelector("#modalContent");
+    if(!modal||!content) return;
+    content.innerHTML=html;
+    modal.classList.add("open");
+  }
+
+  function openForgotPassword(prefill=""){
+    const safePrefill=String(prefill||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    showAuthModal(`
+      <div class="eyebrow">PASSWORD HELP</div>
+      <h2>Reset your password</h2>
+      <p style="color:var(--muted);line-height:1.6">Enter the email address used for your Untamed account. We will email you a secure reset link.</p>
+      <form id="untamedForgotPasswordForm">
+        <label>Email address<input autocomplete="email" id="untamedForgotPasswordEmail" required type="email" value="${safePrefill}"></label>
+        <button class="primary" style="width:100%;margin-top:10px" type="submit">Send reset email</button>
+      </form>
+      <p class="auth-help">The email may take a few minutes to arrive. Check your junk folder if you cannot see it.</p>`);
+
+    const form=document.querySelector("#untamedForgotPasswordForm");
+    const emailField=document.querySelector("#untamedForgotPasswordEmail");
+    setTimeout(()=>emailField?.focus(),0);
+    form?.addEventListener("submit",async e=>{
+      e.preventDefault();
+      const button=form.querySelector('button[type="submit"]');
+      const email=String(emailField?.value||"").trim().toLowerCase();
+      button.disabled=true;
+      button.textContent="Sending…";
+      try{
+        const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/#reset-password`});
+        if(error) throw error;
+        showAuthModal(`
+          <div class="eyebrow">EMAIL SENT</div>
+          <h2>Check your email</h2>
+          <p style="color:var(--muted);line-height:1.6">If an Untamed account exists for that email address, a password-reset link has been sent. Open the link to choose a new password.</p>`);
+      }catch(err){
+        alert(err?.message||"The reset email could not be sent. Please try again.");
+        button.disabled=false;
+        button.textContent="Send reset email";
+      }
+    });
+  }
+
+  let passwordRecoveryOpen=false;
+  function openPasswordRecovery(){
+    if(passwordRecoveryOpen) return;
+    passwordRecoveryOpen=true;
+    showAuthModal(`
+      <div class="eyebrow">RESET PASSWORD</div>
+      <h2>Choose a new password</h2>
+      <p style="color:var(--muted);line-height:1.6">Enter your new password twice to make sure it is correct.</p>
+      <form id="untamedNewPasswordForm">
+        <label>New password<input autocomplete="new-password" id="untamedNewPassword" minlength="8" placeholder="At least 8 characters" required type="password"></label>
+        <label>Confirm new password<input autocomplete="new-password" id="untamedNewPasswordConfirm" minlength="8" placeholder="Enter the same password again" required type="password"></label>
+        <button class="primary" style="width:100%;margin-top:10px" type="submit">Save new password</button>
+      </form>`);
+
+    const form=document.querySelector("#untamedNewPasswordForm");
+    const password=document.querySelector("#untamedNewPassword");
+    const confirmation=document.querySelector("#untamedNewPasswordConfirm");
+    setTimeout(()=>password?.focus(),0);
+    form?.addEventListener("submit",async e=>{
+      e.preventDefault();
+      if(password.value!==confirmation.value){
+        alert("The passwords do not match. Please enter them again.");
+        confirmation.focus();
+        return;
+      }
+      const button=form.querySelector('button[type="submit"]');
+      button.disabled=true;
+      button.textContent="Saving…";
+      try{
+        const {error}=await db.auth.updateUser({password:password.value});
+        if(error) throw error;
+        await db.auth.signOut();
+        showAuthModal(`
+          <div class="eyebrow">PASSWORD UPDATED</div>
+          <h2>Your new password is ready.</h2>
+          <p style="color:var(--muted);line-height:1.6">You can now close this message and log in using your new password.</p>
+          <button class="primary" id="finishPasswordReset" style="width:100%" type="button">Close</button>`);
+        document.querySelector("#finishPasswordReset")?.addEventListener("click",()=>document.querySelector("#modal")?.classList.remove("open"));
+      }catch(err){
+        alert(err?.message||"Your password could not be updated. Please request a new reset email and try again.");
+        button.disabled=false;
+        button.textContent="Save new password";
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-forgot-email-source]").forEach(button=>button.addEventListener("click",()=>{
+    const source=document.getElementById(button.dataset.forgotEmailSource);
+    openForgotPassword(source?.value||"");
+  }));
+  window.openUntamedForgotPassword=openForgotPassword;
+
+  db.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY") setTimeout(openPasswordRecovery,0);
+  });
+  if(location.hash.includes("type=recovery")||new URLSearchParams(location.search).get("type")==="recovery"){
+    setTimeout(openPasswordRecovery,350);
+  }
 
   let currentCustomerUser = null;
   let customerSelectedRatings = {};
@@ -3133,15 +3244,28 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   document.querySelector("#applyForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     if(guideApplicationSubmitting) return;
+
+    const email=document.querySelector("#applyEmail").value.trim().toLowerCase();
+    const confirmEmail=document.querySelector("#applyEmailConfirm").value.trim().toLowerCase();
+    const password=document.querySelector("#applyPassword").value;
+    const confirmPassword=document.querySelector("#applyPasswordConfirm").value;
+    if(email!==confirmEmail){
+      alert("The email addresses do not match. Please check both email fields.");
+      document.querySelector("#applyEmailConfirm").focus();
+      return;
+    }
+    if(password!==confirmPassword){
+      alert("The passwords do not match. Please enter the same password twice.");
+      document.querySelector("#applyPasswordConfirm").focus();
+      return;
+    }
+
     guideApplicationSubmitting=true;
 
     const form=e.currentTarget;
     const submit=form.querySelector('button[type="submit"]');
     submit.disabled=true;
     submit.textContent="Submitting...";
-
-    const email=document.querySelector("#applyEmail").value.trim();
-    const password=document.querySelector("#applyPassword").value;
     let applicationSaved=false;
 
     try {
@@ -3192,25 +3316,31 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
         if(metaError) throw metaError;
       }
 
-      // Creating/confirming the login is deliberately separate from saving the application.
-      // A login problem must never make a successfully saved application look like it failed.
+      // Account creation is deliberately separate from saving the application.
+      // The secure backend creates a confirmed guide login without sending a signup email.
       let loginNote="Your application is saved.";
       try {
-        const {error:signupError}=await db.auth.signUp({
-          email,password,
-          options:{
-            data:{full_name:application.guide_name},
-            emailRedirectTo:`${window.location.origin}/#guides`
-          }
+        const response=await fetch(`${SUPABASE_URL}/functions/v1/guide-account-setup`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+          body:JSON.stringify({
+            action:"create",
+            application_id:applicationId,
+            email,
+            confirm_email:confirmEmail,
+            password,
+            confirm_password:confirmPassword,
+            full_name:application.guide_name
+          })
         });
-        if(signupError){
-          loginNote="Your application is saved. This email may already have a Untamed login, so you can use your existing login details after the application is approved.";
-        }else{
-          loginNote="Your application is saved. Check your email if you are asked to confirm your new guide login.";
-        }
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(result.error||"Your guide login could not be set up automatically.");
+        loginNote="Your guide account and application are saved. You can log in after Untamed approves your profile.";
       }catch(loginErr){
         console.warn("Application saved; guide login setup needs attention:",loginErr);
-        loginNote="Your application is saved. Your login could not be set up automatically, but this will not affect the application review.";
+        loginNote=String(loginErr?.message||"").includes("already exists")
+          ? "Your application is saved. An Untamed account already uses this email. Log in with that account or use Forgot password so the application can be connected."
+          : "Your application is saved. Your login could not be set up automatically, but this will not affect the application review.";
       }
 
       document.querySelector("#modalContent").innerHTML=`
@@ -3831,6 +3961,27 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     try { await window.loadUntamedGuideInbox?.(); } catch(err) { console.warn("Guide inbox could not be refreshed:",err); }
   }
 
+  async function linkGuideApplicationSession(session){
+    if(!session?.access_token) return false;
+    try{
+      const response=await fetch(`${SUPABASE_URL}/functions/v1/guide-account-setup`,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "apikey":SUPABASE_PUBLISHABLE_KEY,
+          "Authorization":`Bearer ${session.access_token}`
+        },
+        body:JSON.stringify({action:"link"})
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(result.error||"The guide application could not be connected.");
+      return Boolean(result.linked);
+    }catch(err){
+      console.warn("Guide application link:",err);
+      return false;
+    }
+  }
+
   document.querySelector("#loginForm")?.addEventListener("submit", async e => {
     e.preventDefault();
     const submit=e.currentTarget.querySelector('button[type="submit"]');
@@ -3843,6 +3994,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       const {data,error}=await db.auth.signInWithPassword({email,password});
       if(error) throw error;
       if(!data?.user) throw new Error("Login did not complete.");
+      await linkGuideApplicationSession(data.session);
 
       // Authentication succeeded. Dashboard loading is handled separately so a
       // secondary data error cannot incorrectly tell the guide their login failed.
@@ -4401,9 +4553,10 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   }
 
   // Restore an existing approved-guide session on refresh.
-  db.auth.getUser().then(async ({data})=>{
-    if(data?.user) {
-      try { await loadGuideDashboard(data.user); } catch(_) {}
+  db.auth.getSession().then(async ({data})=>{
+    if(data?.session?.user) {
+      await linkGuideApplicationSession(data.session);
+      try { await loadGuideDashboard(data.session.user); } catch(_) {}
     }
   });
 

@@ -209,11 +209,11 @@ textarea{min-height:105px;resize:vertical}
 
 .guide-dashboard-shell{max-width:1180px;margin:0 auto;padding:18px 0 40px}
 .guide-dashboard-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px}
-.guide-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.guide-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}
 .guide-summary-card{background:#fff;border:1px solid #e3e8e4;border-radius:16px;padding:16px;text-align:left;box-shadow:0 8px 24px rgba(20,45,30,.06);cursor:pointer}
 .guide-summary-card strong{display:block;font-size:28px;color:var(--forest);margin:4px 0}.guide-summary-card span,.guide-summary-card small{color:var(--muted)}
-.guide-dashboard-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:18px;align-items:start}
-.guide-dashboard-nav{display:flex;flex-direction:column;gap:8px;position:sticky;top:14px}.guide-tab-btn{border:1px solid #dfe7e1;background:#fff;border-radius:12px;padding:12px 14px;text-align:left;font-weight:800;cursor:pointer}.guide-tab-btn.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+.guide-dashboard-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+.guide-dashboard-nav{display:none}.guide-tab-btn{border:1px solid #dfe7e1;background:#fff;border-radius:12px;padding:12px 14px;text-align:left;font-weight:800;cursor:pointer}.guide-tab-btn.active{background:var(--forest);color:#fff;border-color:var(--forest)}
 .guide-tab-panel{display:none}.guide-tab-panel.active{display:block}
 .guide-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.guide-quick-card{border:1px solid #dfe7e1;background:#fff;border-radius:16px;padding:18px;text-align:left;cursor:pointer}.guide-quick-card strong{display:block;color:var(--forest);font-size:17px;margin-bottom:4px}.guide-quick-card span{color:var(--muted);font-size:14px;line-height:1.45}.guide-attention-item{padding:12px 0;border-bottom:1px solid #ecefec}.guide-attention-item:last-child{border-bottom:0}
 .guide-booking-hero{background:linear-gradient(135deg,#163b29,#28563e);color:#fff;border-radius:22px;padding:22px;margin-bottom:16px;box-shadow:0 16px 36px rgba(18,48,32,.18)}
@@ -232,7 +232,7 @@ textarea{min-height:105px;resize:vertical}
 .guide-archive-panel{margin-top:12px}.guide-archive-panel[hidden]{display:none}.guide-archive-panel .listing-item{background:#fbfcfb}.guide-archive-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;margin-left:6px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.18);font-size:12px}
 @media(max-width:700px){.guide-past-search{grid-template-columns:1fr}.guide-past-cta{align-items:stretch}.guide-past-cta .darkbtn{width:100%}}
 
-@media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-dashboard-nav{position:static;display:flex;overflow-x:auto;gap:8px;padding-bottom:4px}.guide-tab-btn{white-space:nowrap;text-align:center}.guide-quick-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.guide-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dashboard-layout{grid-template-columns:1fr}.guide-quick-grid{grid-template-columns:1fr}}
 
 
 .customer-dashboard-shell{max-width:1000px;margin:0 auto}
@@ -1129,19 +1129,20 @@ button{
 .untamed-message-toast-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .untamed-message-toast-copy{min-width:0}.untamed-message-toast-copy strong,.untamed-message-toast-copy small{display:block}.untamed-message-toast-copy small{margin-top:3px;color:#dce8e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .guide-mobile-nav{display:none}
+body.guide-session-active .bottom-nav{display:none!important}
+body.guide-session-active .app{padding-bottom:92px}
+body.guide-session-active .guide-dashboard-shell{padding-bottom:94px}
+body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:65;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));background:rgba(16,39,31,.98);border-top:1px solid #284a3c;backdrop-filter:blur(14px)}
+.guide-mobile-nav button{position:relative;min-width:0;border:0;background:transparent;color:#c8d0c8;padding:6px 2px;font-size:11px;font-weight:900;cursor:pointer}
+.guide-mobile-nav button.active{background:#fff;color:#143328}
+.guide-mobile-nav button.has-unread{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.45)}
+.guide-mobile-nav svg{display:block;width:22px;height:22px;margin:0 auto 4px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.guide-mobile-nav .untamed-app-badge{top:0;right:calc(50% - 24px);border-color:#143328}
 @media(max-width:760px){
-  body.guide-session-active .bottom-nav{display:none!important}
-  body.guide-session-active .app{padding-bottom:84px}
-  body.guide-session-active .guide-dashboard-shell{padding-bottom:86px}
-  body.guide-session-active .guide-mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:65;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));background:rgba(16,39,31,.98);border-top:1px solid #284a3c;backdrop-filter:blur(14px)}
-  .guide-mobile-nav button{position:relative;min-width:0;border:0;background:transparent;color:#c8d0c8;padding:6px 2px;font-size:9px;font-weight:900;cursor:pointer}
-  .guide-mobile-nav button.active{background:#fff;color:#143328}
-  .guide-mobile-nav button.has-unread{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.45)}
-  .guide-mobile-nav svg{display:block;width:20px;height:20px;margin:0 auto 4px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .guide-mobile-nav .untamed-app-badge{top:0;right:calc(50% - 24px);border-color:#143328}
   .untamed-notification-controls{align-items:stretch;flex-direction:column}
   .untamed-notification-controls button{width:100%}
   .guide-header-inbox-btn .guide-header-inbox-label{display:none}
+  .guide-mobile-nav button{font-size:9px}
 }
 </style>
 <style id="untamed-featured-listing-carousel">
@@ -1730,6 +1731,9 @@ button{
 <button class="pill" id="guideSignOut" type="button">Sign out</button>
 </div>
 </div>
+<div class="guide-dashboard-layout">
+<main class="guide-dashboard-content">
+<section class="guide-tab-panel active" data-guide-panel="dashboard">
 <div class="guide-summary-grid">
 <button class="guide-summary-card" data-guide-tab="bookings" type="button">
 <span>Pending requests</span><strong id="guidePendingCount">0</strong><small>Needs your response</small>
@@ -1743,27 +1747,19 @@ button{
 <button class="guide-summary-card" data-guide-tab="listings" type="button">
 <span>Awaiting review</span><strong id="guidePendingListingCount">0</strong><small>Pending approval</small>
 </button>
+<button class="guide-summary-card" data-guide-tab="inbox" type="button">
+<span>Unread messages</span><strong id="guideDashboardUnreadCount">0</strong><small>Open your inbox</small>
+</button>
 </div>
-<div class="guide-dashboard-layout">
-<aside class="guide-dashboard-nav">
-<button class="guide-tab-btn active" data-guide-tab="overview" type="button">Overview</button>
-<button class="guide-tab-btn" data-guide-tab="bookings" type="button">Bookings</button>
-<button class="guide-tab-btn" data-guide-tab="inbox" type="button">Inbox <span class="untamed-tab-badge" id="guideInboxNavBadge" hidden>0</span></button>
-<button class="guide-tab-btn" data-guide-tab="listings" type="button">My Listings</button>
-<button class="guide-tab-btn" data-guide-tab="availability" type="button">Availability</button>
-<button class="guide-tab-btn" data-guide-tab="profile" type="button">Profile</button>
-</aside>
-<main class="guide-dashboard-content">
-<section class="guide-tab-panel active" data-guide-panel="overview">
 <div class="panel">
-<div class="eyebrow">OVERVIEW</div>
+<div class="eyebrow">DASHBOARD</div>
 <h3>What needs your attention</h3>
 <div id="guideAttentionList"><p style="color:var(--muted)">Your latest activity will appear here.</p></div>
 </div>
 <div class="guide-quick-grid">
 <button class="guide-quick-card" data-guide-tab="bookings" type="button"><strong>Review bookings</strong><span>Accept or decline customer requests.</span></button>
 <button class="guide-quick-card" data-guide-tab="listings" type="button"><strong>Manage listings</strong><span>Add a new trip or edit an existing listing.</span></button>
-<button class="guide-quick-card" data-guide-tab="availability" type="button"><strong>Update availability</strong><span>Open and close dates on your booking calendar.</span></button>
+<button class="guide-quick-card" data-guide-tab="inbox" type="button"><strong>Open inbox</strong><span>Read and reply to customer messages.</span></button>
 <button class="guide-quick-card" data-guide-tab="profile" type="button"><strong>Guide profile</strong><span>Update the information customers see.</span></button>
 </div>
 </section>
@@ -1826,9 +1822,7 @@ button{
 <div id="guideArchivedListingsContainer"><div class="guide-past-empty">You have no archived listings.</div></div>
 </div>
 </div>
-</section>
-<section class="guide-tab-panel" data-guide-panel="availability">
-<div class="panel">
+<div class="panel" id="guideAvailabilitySection" style="margin-top:18px">
 <div class="eyebrow">AVAILABILITY CALENDAR</div>
 <h3>Choose the days you are available</h3>
 <p style="color:var(--muted)">Green days can be booked by customers. Days with an × cannot be booked.</p>
@@ -1847,6 +1841,7 @@ button{
 <span class="legend-item"><span class="legend-swatch unavailable">×</span> Unavailable</span>
 </div>
 <div class="month-grid" id="guideCalendar"></div>
+</div>
 </div>
 </div>
 </section>
@@ -1986,7 +1981,7 @@ button{
 <button class="bottom" data-page="contact">About Us</button>
 </nav>
 <nav aria-label="Guide app" class="guide-mobile-nav" id="guideMobileNav">
-<button class="active" data-guide-mobile-tab="overview" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"></path><path d="M5 10v10h14V10"></path></svg><span>Dashboard</span></button>
+<button aria-current="page" class="active" data-guide-mobile-tab="dashboard" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"></path><path d="M5 10v10h14V10"></path></svg><span>Dashboard</span></button>
 <button data-guide-mobile-tab="bookings" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg><span>Bookings</span></button>
 <button data-guide-mobile-tab="listings" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v15H4z"></path><path d="M8 9h8M8 13h8M8 17h5"></path></svg><span>Listings</span></button>
 <button data-guide-mobile-tab="inbox" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5Z"></path><path d="m5 7 7 5 7-5"></path></svg><span>Inbox</span><span class="untamed-app-badge" id="guideMobileInboxBadge" hidden>0</span></button>
@@ -3959,6 +3954,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
     try { await loadGuideBookings(); } catch(err) { console.warn("Guide bookings could not be loaded:",err); }
     try { await refreshGuideDashboardStats(); } catch(err) { console.warn("Guide dashboard summary could not be refreshed:",err); }
     try { await window.loadUntamedGuideInbox?.(); } catch(err) { console.warn("Guide inbox could not be refreshed:",err); }
+    switchGuideDashboardTab(guidePageFromHash()||"dashboard",{push:false,scroll:false});
   }
 
   async function linkGuideApplicationSession(session){
@@ -4310,22 +4306,53 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   document.querySelector("#addListing")?.addEventListener("click",openNewListing);
 
 
-  function switchGuideDashboardTab(tab){
-    document.querySelectorAll(".guide-tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.guideTab===tab));
-    document.querySelectorAll(".guide-tab-panel").forEach(p=>p.classList.toggle("active",p.dataset.guidePanel===tab));
-    document.querySelectorAll("[data-guide-mobile-tab]").forEach(b=>b.classList.toggle("active",b.dataset.guideMobileTab===tab));
-    if(tab==="inbox") window.loadUntamedGuideInbox?.();
+  const GUIDE_DASHBOARD_PAGES=new Set(["dashboard","bookings","listings","inbox","profile"]);
+  function normaliseGuidePage(tab){
+    if(tab==="overview") return "dashboard";
+    if(tab==="availability") return "listings";
+    return GUIDE_DASHBOARD_PAGES.has(tab)?tab:"dashboard";
+  }
+  function guidePageFromHash(){
+    const match=(location.hash||"").match(/^#guide-(dashboard|bookings|listings|inbox|profile)$/);
+    return match?.[1]||null;
+  }
+  function switchGuideDashboardTab(tab,{push=true,scroll=true}={}){
+    const page=normaliseGuidePage(tab);
+    document.querySelectorAll(".guide-tab-panel").forEach(panel=>{
+      const active=panel.dataset.guidePanel===page;
+      panel.classList.toggle("active",active);
+      panel.hidden=!active;
+    });
+    document.querySelectorAll("[data-guide-mobile-tab]").forEach(button=>{
+      const active=button.dataset.guideMobileTab===page;
+      button.classList.toggle("active",active);
+      if(active) button.setAttribute("aria-current","page"); else button.removeAttribute("aria-current");
+    });
+    if(push&&location.hash!==`#guide-${page}`) history.pushState({guidePage:page},"",`#guide-${page}`);
+    if(page==="bookings") loadGuideBookings().catch(err=>console.warn("Guide bookings could not be refreshed:",err));
+    if(page==="listings") loadGuideListings().catch(err=>console.warn("Guide listings could not be refreshed:",err));
+    if(page==="inbox") window.loadUntamedGuideInbox?.();
+    if(page==="profile"){
+      loadGuideProfilePhotos().catch(err=>console.warn("Guide photos could not be refreshed:",err));
+      loadGuideBankDetails().catch(err=>console.warn("Guide payout details could not be refreshed:",err));
+    }
+    if(scroll) window.scrollTo({top:0,behavior:"smooth"});
   }
   function openGuideDashboardTab(tab){
-    if(!document.querySelector("#page-guides")?.classList.contains("active")) setPage("guides");
+    if(!currentGuide) return;
+    if(!document.querySelector("#page-guides")?.classList.contains("active")) showPage("guides",false);
     document.querySelector('#page-guides .tab[data-tab="login"]')?.click();
     switchGuideDashboardTab(tab);
   }
   window.openUntamedGuideTab=openGuideDashboardTab;
-  document.querySelectorAll("[data-guide-tab]").forEach(el=>el.addEventListener("click",()=>{ if(el.dataset.guideTab) switchGuideDashboardTab(el.dataset.guideTab); }));
+  document.querySelectorAll("[data-guide-tab]").forEach(el=>el.addEventListener("click",()=>{ if(el.dataset.guideTab) openGuideDashboardTab(el.dataset.guideTab); }));
   document.querySelector("#guideHeaderInbox")?.addEventListener("click",()=>openGuideDashboardTab("inbox"));
   document.querySelectorAll("[data-guide-mobile-tab]").forEach(el=>el.addEventListener("click",()=>openGuideDashboardTab(el.dataset.guideMobileTab)));
   document.querySelector("#dashboardAddListing")?.addEventListener("click",()=>{ switchGuideDashboardTab("listings"); openNewListing(); });
+  window.addEventListener("popstate",()=>{
+    const page=guidePageFromHash();
+    if(page&&currentGuide){showPage("guides",false);switchGuideDashboardTab(page,{push:false});}
+  });
 
   async function refreshGuideDashboardStats(){
     if(!currentGuide) return;
@@ -5676,6 +5703,8 @@ window.addEventListener("hashchange", () => {
 
   function updateGuideBadges(unread){
     const count=Math.max(0,Number(unread)||0);
+    const dashboardCount=document.getElementById("guideDashboardUnreadCount");
+    if(dashboardCount) dashboardCount.textContent=String(count);
     ["guideInboxUnread","guideInboxNavBadge","guideHeaderInboxBadge","guideMobileInboxBadge"].forEach(id=>{
       const el=document.getElementById(id);
       if(el){el.textContent=String(count);el.hidden=!count;el.closest("button")?.classList.toggle("has-unread",!!count);}

@@ -2229,8 +2229,8 @@ function confirmRequest(){$("#modalContent").innerHTML='<div class="eyebrow">REQ
 $("#close").addEventListener("click",()=>$("#modal").classList.remove("open"));$("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))$("#modal").classList.remove("open")});
 $$(".tab").forEach(b=>b.addEventListener("click",()=>{$$(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");$$(".tab-panel").forEach(p=>p.classList.remove("active"));$("#tab-"+b.dataset.tab).classList.add("active")}));
 /* Supabase live guide handlers are attached below. */
-$("#approveBtn").addEventListener("click",()=>{$("#pendingApp").innerHTML='<strong>Application approved</strong><p>This guide can now access their guide account and prepare listings.</p>';$("#pendingCount").textContent='0'});
-$("#declineBtn").addEventListener("click",()=>{$("#pendingApp").innerHTML='<strong>Application declined</strong><p>The application has been removed from the review queue.</p>';$("#pendingCount").textContent='0'});
+$("#approveBtn")?.addEventListener("click",()=>{$("#pendingApp").innerHTML='<strong>Application approved</strong><p>This guide can now access their guide account and prepare listings.</p>';$("#pendingCount").textContent='0'});
+$("#declineBtn")?.addEventListener("click",()=>{$("#pendingApp").innerHTML='<strong>Application declined</strong><p>The application has been removed from the review queue.</p>';$("#pendingCount").textContent='0'});
 
 $("#toDetails").addEventListener("click",()=>{
   if(!selectedDate){
@@ -4167,6 +4167,15 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       archivedToggle?.setAttribute("aria-expanded","false");
     }
 
+    // Connect dynamically rendered buttons immediately. Calendar loading and
+    // other dashboard work must never be able to leave listing edits disabled.
+    document.querySelectorAll(".guide-edit-listing").forEach(btn=>{
+      btn.addEventListener("click",event=>{
+        event.preventDefault();
+        openEditListing(btn.dataset.id);
+      });
+    });
+
     const sel=document.querySelector("#guideAvailabilityListing");
     sel.innerHTML=list.length ? list.map(l=>`<option value="${l.id}">${l.title}</option>`).join("") : '<option value="">Add a listing first</option>';
     if(list.length) {
@@ -4178,9 +4187,6 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
       document.querySelector("#guideCalendar").innerHTML="";
     }
 
-    document.querySelectorAll(".guide-edit-listing").forEach(btn=>{
-      btn.addEventListener("click",()=>openEditListing(btn.dataset.id));
-    });
   }
 
   document.querySelector("#toggleGuideArchivedListings")?.addEventListener("click",e=>{

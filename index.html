@@ -1167,21 +1167,27 @@ button{
   scroll-snap-align:start;
   scroll-snap-stop:always;
 }
-.untamed-featured-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.untamed-featured-section .section-head{
+  flex-direction:row!important;
+  align-items:flex-end!important;
+  justify-content:space-between!important;
+  flex-wrap:nowrap;
+}
+.untamed-featured-actions{display:flex;align-items:center;justify-content:flex-end;margin-left:auto;flex:0 0 auto}
 .untamed-carousel-arrow{
   display:inline-grid;
   place-items:center;
-  width:42px;
+  width:46px;
   height:42px;
-  border:1px solid #cfd8d2;
-  background:#fff;
+  border:0;
+  background:transparent;
   color:var(--forest);
-  font-size:25px;
+  font-size:34px;
   font-weight:900;
   line-height:1;
   cursor:pointer;
 }
-.untamed-carousel-arrow:hover,.untamed-carousel-arrow:focus-visible{background:var(--forest);color:#fff;border-color:var(--forest)}
+.untamed-carousel-arrow:hover,.untamed-carousel-arrow:focus-visible{background:#edf2ed;color:var(--forest)}
 .untamed-carousel-more{
   flex:0 0 220px;
   min-height:300px;
@@ -1205,11 +1211,13 @@ button{
 .untamed-carousel-more strong span{font-size:24px;color:#fff;letter-spacing:0}
 .untamed-carousel-more:hover,.untamed-carousel-more:focus-visible{background:#1d4939}
 @media(max-width:620px){
+  #page-home{padding-bottom:calc(110px + env(safe-area-inset-bottom))!important}
+  .untamed-featured-section .section-head{gap:8px!important}
+  .untamed-featured-section .section-head h2{font-size:clamp(21px,6.6vw,26px)!important}
   #homeCards.untamed-listing-carousel{padding-right:42px;margin-right:-10px;width:calc(100% + 10px)}
   #homeCards.untamed-listing-carousel > .kg-public-card,
   #homeCards.untamed-listing-carousel > .card{flex-basis:min(82vw,320px)!important}
   .untamed-carousel-more{flex-basis:min(72vw,275px);min-height:255px}
-  .untamed-carousel-arrow{display:none}
 }
 </style>
 </head>
@@ -1254,8 +1262,8 @@ button{
 <div class="map-results" id="mapResults" style="display:none"></div>
 </div>
 </section>
-<section class="section">
-<div class="section-head"><div><div class="eyebrow">Featured Listings</div><h2>Featured Listings</h2></div><div class="untamed-featured-actions"><button class="untamed-carousel-arrow" data-home-carousel="-1" type="button" aria-label="Scroll featured listings left">‹</button><button class="untamed-carousel-arrow" data-home-carousel="1" type="button" aria-label="Scroll featured listings right">›</button><button class="pill" data-page="explore">View all</button></div></div>
+<section class="section untamed-featured-section">
+<div class="section-head"><div><div class="eyebrow">Featured Listings</div><h2>Featured Listings</h2></div><div class="untamed-featured-actions"><button class="untamed-carousel-arrow" data-home-carousel="1" type="button" aria-label="Slide featured listings to the right">→</button></div></div>
 <div class="grid-3 untamed-listing-carousel" id="homeCards" role="region" aria-label="Featured Listings" tabindex="0"></div>
 </section>
 </section>

@@ -1024,15 +1024,16 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 }
 </style>
 <style id="untamed-booking-inbox-style">
-.untamed-inbox-panel{margin-top:16px}
+.untamed-inbox-panel{margin-top:16px;min-width:0;max-width:100%;overflow:hidden}
 #customerBookingsPanel{margin-top:16px}
 .untamed-inbox-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
 .untamed-unread-badge,.untamed-tab-badge{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#143328;color:#fff;font-size:11px;font-weight:900}
 .untamed-tab-badge{min-width:20px;height:20px;margin-left:5px;background:#b98231}
-.untamed-thread-list{display:grid;gap:9px}
-.untamed-thread-card{width:100%;border:1px solid #dfe5df;background:#fff;border-radius:12px;padding:13px;text-align:left;color:inherit;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.untamed-thread-list,#customerInboxContainer,#guideInboxContainer{width:100%;min-width:0;max-width:100%}
+.untamed-thread-list{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;overflow:hidden}
+.untamed-thread-card{width:100%;min-width:0;max-width:100%;overflow:hidden;border:1px solid #dfe5df;background:#fff;border-radius:12px;padding:13px;text-align:left;color:inherit;display:flex;justify-content:space-between;gap:12px;align-items:center}
 .untamed-thread-card:hover{border-color:#9eada3}
-.untamed-thread-main{min-width:0}.untamed-thread-main strong{display:block;color:#17392b}.untamed-thread-main small{display:block;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.untamed-thread-main{min-width:0;max-width:100%;flex:1 1 auto;overflow:hidden}.untamed-thread-main strong{display:block;color:#17392b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.untamed-thread-main small{display:block;max-width:100%;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .untamed-thread-meta{text-align:right;flex:0 0 auto;font-size:11px;color:var(--muted)}
 .untamed-thread-unread{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#b98231;color:#fff;font-weight:900;margin-top:4px}
 .untamed-message-thread{display:flex;flex-direction:column;gap:9px;margin:16px 0;max-height:420px;overflow:auto;padding:4px}
@@ -1043,7 +1044,7 @@ html,body{margin:0!important;padding:0!important;background:#fff!important}
 .untamed-message-form{border-top:1px solid var(--line);padding-top:12px}
 .untamed-message-form textarea{min-height:84px}
 .untamed-inbox-empty{padding:20px 12px;text-align:center;color:var(--muted);border:1px dashed #d6ddd7;border-radius:12px}
-@media(max-width:620px){.untamed-message-bubble{max-width:90%}.untamed-thread-card{align-items:flex-start}.untamed-thread-meta{font-size:10px}}
+@media(max-width:620px){.untamed-message-bubble{max-width:90%}.untamed-thread-card{align-items:flex-start;gap:8px;padding:11px}.untamed-thread-meta{font-size:10px;max-width:68px;white-space:nowrap}}
 </style>
 
 
@@ -5608,14 +5609,22 @@ window.addEventListener("hashchange", () => {
   }
 
   function threadCards(bookings, summary, role){
-    if(!bookings.length) return '<div class="untamed-inbox-empty">No booking conversations yet.</div>';
-    return `<div class="untamed-thread-list">${bookings.map(b=>{
+    const conversations=bookings
+      .filter(b=>summary[b.id]?.last)
+      .sort((a,b)=>new Date(summary[b.id].last.created_at||0)-new Date(summary[a.id].last.created_at||0));
+    if(!conversations.length){
+      const prompt=role==="customer"
+        ? "No conversations yet. Use Message guide inside a booking to start one."
+        : "No customer conversations yet. Use Message inside a booking to start one.";
+      return `<div class="untamed-inbox-empty">${prompt}</div>`;
+    }
+    return `<div class="untamed-thread-list">${conversations.map(b=>{
       const s=summary[b.id]||{};
       const other=role==="customer"
         ? (b.guides?.business_name||b.guides?.display_name||"Your guide")
         : (b.customer_name||"Customer");
       const trip=b.listings?.title||"Guided trip";
-      const last=s.last?.message ? esc(s.last.message) : "No messages yet — tap to start the conversation.";
+      const last=esc(s.last.message);
       return `<button class="untamed-thread-card" type="button" data-thread-booking="${b.id}">
         <span class="untamed-thread-main"><strong>${esc(other)}</strong><small>${esc(trip)} • ${last}</small></span>
         <span class="untamed-thread-meta">${prettyDate(b.booking_date)}${s.unread?`<span class="untamed-thread-unread">${s.unread}</span>`:""}</span>

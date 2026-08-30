@@ -1362,6 +1362,19 @@ button{
 #page-guide-dashboard .guide-dashboard-shell{padding-top:0!important}
 .guide-dashboard-back{margin-bottom:14px}
 
+/* Dashboard destinations behave as true top-level pages, without the
+   dashboard welcome header reserving a large blank area above them. */
+#page-guide-dashboard.guide-subpage-active{padding-top:0!important;margin-top:0!important}
+#page-guide-dashboard.guide-subpage-active .guide-dashboard-shell{padding-top:0!important}
+#page-guide-dashboard.guide-subpage-active .guide-dashboard-header{display:none!important}
+#page-guide-dashboard.guide-subpage-active .guide-dashboard-layout,
+#page-guide-dashboard.guide-subpage-active .guide-dashboard-content,
+#page-guide-dashboard.guide-subpage-active .guide-tab-panel.active{margin-top:0!important;padding-top:0!important}
+#page-guide-dashboard.guide-subpage-active .guide-dashboard-back{margin-top:0!important;padding-top:0!important}
+#page-guide-past-bookings.active{padding-top:0!important}
+#page-guide-past-bookings>.routebar{margin-top:0!important;padding-top:0!important}
+#page-guide-past-bookings>.section{margin-top:8px!important}
+
 /* A notification prompt is only shown as a small optional action on supported devices. */
 .untamed-notification-enable{display:flex;align-items:center;gap:9px;margin:0 0 14px;color:var(--muted);font-size:12px}
 .untamed-notification-enable[hidden]{display:none!important}
@@ -1723,7 +1736,7 @@ button{
 <li><strong>Showcase your profile</strong> – Add photos, bio, Instagram, Facebook, TikTok, YouTube and your own website.</li>
 </ul>
 </section>
-<section class="section"><div class="fee-box"><div class="fee-big"><div><strong>9% + GST</strong><span>one off fee per booking</span></div></div><div><h2>No added fees.</h2><p>Untamed charges one booking fee of 9% + GST. There are no extra listing or platform fees added on top.</p></div></div></section>
+<section class="section"><div class="fee-box"><div class="fee-big"><div><strong>9% + GST</strong><span>one-off fee per booking</span></div></div><div><h2>No added fees.</h2><p>Joining Untamed and listing your experiences is free. You only pay when you receive a confirmed booking. A service fee of 9% + GST is deducted from the booking payment, with no added fees!</p></div></div></section>
 </section>
 <section class="page" id="page-guide-apply">
 <div class="routebar"><button data-page="guides" type="button">← Back to Guides</button><span>/</span><span>Apply to join</span></div>
@@ -4433,6 +4446,7 @@ $("#bookingNextMonth")?.addEventListener("click",()=>{
   }
   function switchGuideDashboardTab(tab,{push=true,scroll=true}={}){
     const page=normaliseGuidePage(tab);
+    document.querySelector("#page-guide-dashboard")?.classList.toggle("guide-subpage-active",page!=="dashboard");
     document.querySelectorAll(".guide-tab-panel").forEach(panel=>{
       const active=panel.dataset.guidePanel===page;
       panel.classList.toggle("active",active);

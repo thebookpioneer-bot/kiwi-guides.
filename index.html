@@ -1353,6 +1353,8 @@ button{
 
 /* Guide account pages start immediately below the green navigation strip. */
 .app.guide-workspace-route>.untamed-master-banner{display:none!important}
+.guide-workspace-route .untamed-master-banner{display:none!important}
+.guide-workspace-route .app{margin-top:0!important;padding-top:0!important}
 .app.guide-workspace-route>.topbar{top:0!important}
 .app.guide-workspace-route>main{margin-top:0!important;padding-top:0!important;min-height:0!important}
 #page-guide-login.active,
@@ -2092,7 +2094,9 @@ function showPage(id, push=true){
   $$(".page").forEach(p=>p.classList.remove("active"));
   const page=$("#page-"+id);
   if(page) page.classList.add("active");
-  document.querySelector(".app")?.classList.toggle("guide-workspace-route",["guide-login","guide-dashboard","guide-past-bookings"].includes(id));
+  const isGuideWorkspaceRoute=["guide-login","guide-dashboard","guide-past-bookings"].includes(id);
+  document.querySelector(".app")?.classList.toggle("guide-workspace-route",isGuideWorkspaceRoute);
+  document.body.classList.toggle("guide-workspace-route",isGuideWorkspaceRoute);
   const navPage=id.startsWith("guide-")?"guides":id;
   $$(".navbtn,.bottom").forEach(b=>b.classList.toggle("active",b.dataset.page===navPage));
   if(push){
@@ -2104,6 +2108,7 @@ function showPage(id, push=true){
   requestAnimationFrame(()=>{
     window.scrollTo(0,0);
     if(document.scrollingElement) document.scrollingElement.scrollTop=0;
+    if(page) page.scrollIntoView({block:"start",inline:"nearest",behavior:"auto"});
   });
 }
 
